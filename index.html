@@ -3,564 +3,430 @@
 <head>
 <meta charset="UTF-8">
 <title>لوحة متابعة Odoo Enterprise 19 — الإدارة العليا</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
   * { box-sizing: border-box; }
+  :root {
+    --primary: #1F4E78; --accent: #2E75B6;
+    --success: #70AD47; --warning: #ED7D31;
+    --danger: #C00000; --gold: #FFC000;
+    --muted: #888; --text: #1a2b4a;
+    --card-shadow: 0 2px 12px rgba(31,78,120,0.08);
+  }
   body {
-    font-family: 'Tahoma','Segoe UI',Arial,sans-serif;
-    margin:0; padding:24px;
-    background: linear-gradient(135deg,#f0f4f8,#e8eef5);
-    color:#1a2b4a;
+    font-family:'Tahoma','Segoe UI',Arial,sans-serif;
+    margin:0; padding:20px;
+    background:linear-gradient(135deg,#f5f8fc 0%,#e8eef5 100%);
+    color:var(--text); line-height:1.5;
   }
   .header {
-    background: linear-gradient(90deg,#1F4E78,#2E75B6);
-    color:white; padding:20px 28px; border-radius:12px;
+    background:linear-gradient(135deg,var(--primary),var(--accent));
+    color:white; padding:22px 28px; border-radius:12px;
     display:flex; justify-content:space-between; align-items:center;
-    box-shadow:0 4px 12px rgba(31,78,120,.2); margin-bottom:20px;
+    box-shadow:0 6px 20px rgba(31,78,120,0.25);
+    margin-bottom:20px; flex-wrap:wrap; gap:12px;
   }
-  .header h1 { margin:0; font-size:22px; }
-  .header .meta { font-size:13px; opacity:.9; margin-top:4px; }
-  .header .badge {
-    background:rgba(255,255,255,.2); padding:6px 14px;
-    border-radius:20px; font-size:13px; font-weight:bold;
+  .header h1 { margin:0; font-size:22px; font-weight:700; }
+  .header .meta { font-size:12px; opacity:0.92; margin-top:6px; line-height:1.7; }
+  .header-right { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+  .badge {
+    background:rgba(255,255,255,0.18); padding:8px 16px;
+    border-radius:24px; font-size:12px; font-weight:bold;
+    border:1px solid rgba(255,255,255,0.25); white-space:nowrap;
   }
-  .kpis { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:20px; }
+  .live-stamp { font-size:11px; opacity:0.7; }
+  .kpis { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:20px; }
   .kpi {
-    background:white; padding:18px; border-radius:10px;
-    box-shadow:0 2px 8px rgba(0,0,0,.06);
-    border-right:4px solid #2E75B6;
+    background:white; padding:16px; border-radius:10px;
+    box-shadow:var(--card-shadow); border-top:3px solid var(--accent);
+    transition:transform 0.2s;
   }
-  .kpi.green { border-right-color:#70AD47; }
-  .kpi.amber { border-right-color:#ED7D31; }
-  .kpi.red   { border-right-color:#C00000; }
-  .kpi .label { color:#666; font-size:13px; margin-bottom:6px; }
-  .kpi .value { font-size:28px; font-weight:bold; color:#1F4E78; }
-  .kpi .sub   { font-size:12px; color:#999; margin-top:4px; }
-  .grid { display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:20px; }
+  .kpi:hover { transform:translateY(-2px); }
+  .kpi.green { border-top-color:var(--success); }
+  .kpi.amber { border-top-color:var(--warning); }
+  .kpi.red   { border-top-color:var(--danger); }
+  .kpi .label { color:#6b7a90; font-size:11.5px; margin-bottom:6px; font-weight:500; }
+  .kpi .value { font-size:26px; font-weight:700; color:var(--primary); line-height:1; }
+  .kpi .sub   { font-size:11px; color:var(--muted); margin-top:6px; }
   .card {
-    background:white; padding:20px; border-radius:10px;
-    box-shadow:0 2px 8px rgba(0,0,0,.06);
+    background:white; padding:22px; border-radius:10px;
+    box-shadow:var(--card-shadow); margin-bottom:16px;
   }
   .card h3 {
-    margin:0 0 16px 0; color:#1F4E78;
-    border-bottom:2px solid #e8eef5; padding-bottom:10px;
-    font-size:16px;
+    margin:0 0 18px 0; color:var(--primary);
+    border-bottom:2px solid #eef2f7; padding-bottom:12px;
+    font-size:15px; font-weight:700; display:flex; align-items:center; gap:8px;
   }
-  .phase-row {
-    display:grid; grid-template-columns:30px 1fr 90px 120px 60px;
-    gap:10px; align-items:center; padding:10px 0;
-    border-bottom:1px solid #f0f0f0; font-size:13px;
+  .grid { display:grid; gap:16px; margin-bottom:16px; }
+  .grid-2  { grid-template-columns:1fr 1fr; }
+  .grid-3  { grid-template-columns:2fr 1fr; }
+  .grid-12 { grid-template-columns:1.4fr 1fr; }
+  .funnel { display:flex; flex-direction:column; gap:10px; }
+  .funnel-stage {
+    display:grid; grid-template-columns:36px 1fr 70px; gap:12px;
+    align-items:center; padding:14px 16px; border-radius:8px;
+    color:white; font-weight:600;
   }
-  .phase-row:last-child { border-bottom:none; }
-  .progress-bar { background:#e8eef5; border-radius:10px; height:18px; position:relative; overflow:hidden; }
-  .progress-fill {
-    height:100%; border-radius:10px;
-    background:linear-gradient(90deg,#4472C4,#2E75B6);
-    display:flex; align-items:center; justify-content:flex-end;
-    padding-left:6px; color:white; font-size:11px; font-weight:bold;
-    min-width: 0;
+  .funnel-stage .num {
+    width:26px; height:26px; border-radius:50%;
+    background:rgba(255,255,255,0.25); display:flex;
+    align-items:center; justify-content:center; font-size:12px;
   }
-  .rag {
-    width:28px; height:28px; border-radius:50%;
-    display:inline-flex; align-items:center; justify-content:center;
-    font-size:14px; margin:0 auto; color:white; font-weight:bold;
+  .funnel-stage .label { font-size:13px; }
+  .funnel-stage .count {
+    font-size:20px; font-weight:700; text-align:center;
+    background:rgba(255,255,255,0.2); padding:4px 0; border-radius:6px;
   }
-  .rag.g { background:#70AD47; }
-  .rag.a { background:#ED7D31; }
-  .rag.r { background:#C00000; }
-  .rag.w { background:#BFBFBF; }
-  .status { font-size:11px; padding:3px 10px; border-radius:12px; text-align:center; white-space:nowrap; }
-  .status.done { background:#d4edda; color:#155724; }
-  .status.prog { background:#cce5ff; color:#004085; }
-  .status.wait { background:#e2e3e5; color:#383d41; }
-  .status.late { background:#f8d7da; color:#721c24; }
-  table.summary { width:100%; border-collapse:collapse; font-size:13px; }
-  table.summary td { padding:8px 6px; border-bottom:1px solid #f0f0f0; }
-  table.summary td:first-child { color:#666; }
-  table.summary td:last-child { font-weight:bold; text-align:left; color:#1F4E78; }
+  .funnel-stage.s1 { background:linear-gradient(135deg,#C00000,#a00000); width:100%; }
+  .funnel-stage.s2 { background:linear-gradient(135deg,#ED7D31,#c66423); width:88%; }
+  .funnel-stage.s3 { background:linear-gradient(135deg,#FFC000,#d49d00); width:76%; color:#5a4500; }
+  .funnel-stage.s4 { background:linear-gradient(135deg,#4472C4,#305f9c); width:64%; }
+  .funnel-stage.s5 { background:linear-gradient(135deg,#70AD47,#4d8a2d); width:52%; }
+  .funnel-stage.s3 .num,.funnel-stage.s3 .count { background:rgba(0,0,0,0.12); }
+  .funnel-note {
+    margin-top:14px; padding:12px; background:#f9fafc;
+    border-radius:8px; border-right:3px solid var(--accent);
+    font-size:12px; color:#555;
+  }
+  .chart-container { position:relative; height:220px; width:100%; }
   .companies { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
   .company-card {
-    padding:12px; border-radius:8px; background:#f9fafc;
-    border-right:3px solid #BFBFBF; font-size:12px;
+    padding:14px; border-radius:10px; background:#f9fafc;
+    border-right:4px solid #BFBFBF; font-size:12px; transition:box-shadow 0.2s;
   }
-  .company-card.green { border-right-color:#70AD47; background:#eff7e7; }
-  .company-card.amber { border-right-color:#ED7D31; background:#fff4e8; }
-  .company-card.red   { border-right-color:#C00000; background:#fcebec; }
-  .company-card .name  { font-weight:bold; color:#1F4E78; margin-bottom:4px; }
-  .company-card .stage { color:#666; font-size:11px; }
-  .company-card .pct   { font-size:18px; font-weight:bold; margin-top:6px; color:#1F4E78; }
-  .pay-row { display:grid; grid-template-columns:2fr 1fr 80px; padding:8px 0; border-bottom:1px solid #f0f0f0; font-size:12px; align-items:center; }
-  .pay-paid { color:#70AD47; font-weight:bold; }
-  .pay-due  { color:#888; }
-  .gantt-row { display:grid; grid-template-columns:200px 1fr; gap:10px; align-items:center; padding:6px 0; font-size:12px; }
-  .gantt-track { position:relative; height:22px; background:#f5f7fa; border-radius:4px; }
-  .gantt-bar { position:absolute; height:100%; border-radius:4px; display:flex; align-items:center; padding:0 6px; color:white; font-size:10px; font-weight:bold; }
-  .footer { text-align:center; color:#888; font-size:12px; margin-top:16px; padding:12px; }
-  #loading {
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    min-height:60vh; font-size:16px; color:#666;
+  .company-card:hover { box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+  .company-card.green { border-right-color:var(--success); background:#f4faec; }
+  .company-card.amber { border-right-color:var(--warning); background:#fef4e8; }
+  .company-card.red   { border-right-color:var(--danger);  background:#fdebec; }
+  .company-card .name { font-weight:700; color:var(--primary); margin-bottom:4px; font-size:13px; }
+  .company-card .meta { color:#6b7a90; font-size:10.5px; margin-bottom:8px; }
+  .company-card .cprog { background:white; border-radius:6px; height:8px; margin-top:8px; overflow:hidden; box-shadow:inset 0 1px 2px rgba(0,0,0,0.06); }
+  .company-card .cprog-fill { height:100%; border-radius:6px; }
+  .company-card .pct-text { font-size:16px; font-weight:700; margin-top:4px; }
+  .company-card .recv-date { font-size:10px; color:#888; margin-top:4px; font-style:italic; }
+  .company-card .status-chip { display:inline-block; font-size:9.5px; padding:2px 6px; border-radius:10px; background:white; font-weight:600; margin-top:6px; }
+  table.summary { width:100%; border-collapse:collapse; font-size:13px; }
+  table.summary td { padding:9px 6px; border-bottom:1px solid #f0f0f0; }
+  table.summary td:first-child { color:#6b7a90; }
+  table.summary td:last-child { font-weight:700; text-align:left; color:var(--primary); }
+  .phase-row {
+    display:grid; grid-template-columns:26px 1fr 100px 130px 50px;
+    gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid #f0f0f0; font-size:12.5px;
   }
-  #loading .spinner {
-    width:40px; height:40px; border:4px solid #e0e0e0;
-    border-top-color:#2E75B6; border-radius:50%;
-    animation:spin .8s linear infinite; margin-bottom:16px;
+  .phase-row:last-child { border-bottom:none; }
+  .progress-bar { background:#eef2f7; border-radius:10px; height:16px; position:relative; overflow:hidden; }
+  .progress-fill {
+    height:100%; border-radius:10px;
+    background:linear-gradient(90deg,var(--accent),var(--primary));
+    display:flex; align-items:center; justify-content:flex-end;
+    padding-left:6px; color:white; font-size:10px; font-weight:bold;
   }
-  @keyframes spin { to { transform:rotate(360deg); } }
-  #error-msg {
-    display:none; background:#f8d7da; color:#721c24;
-    padding:16px; border-radius:8px; margin:24px auto;
-    max-width:600px; text-align:center; font-size:14px;
-  }
+  .rag { width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; margin:0 auto; color:white; font-weight:bold; }
+  .rag.g{background:var(--success);} .rag.a{background:var(--warning);} .rag.r{background:var(--danger);} .rag.w{background:#bfbfbf;}
+  .status { font-size:10px; padding:3px 9px; border-radius:12px; text-align:center; font-weight:600; display:inline-block; }
+  .status.done{background:#d4edda;color:#155724;} .status.prog{background:#cce5ff;color:#004085;}
+  .status.wait{background:#e2e3e5;color:#383d41;} .status.late{background:#f8d7da;color:#721c24;}
+  .activity-list { list-style:none; padding:0; margin:0; }
+  .activity-list li { display:grid; grid-template-columns:32px 1fr auto; gap:12px; align-items:start; padding:11px 0; border-bottom:1px solid #f0f0f0; font-size:13px; }
+  .activity-list li:last-child { border-bottom:none; }
+  .icon-circle { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:13px; flex-shrink:0; }
+  .icon-done{background:var(--success);} .icon-plan{background:var(--warning);}
+  .activity-text { line-height:1.5; padding-top:3px; }
+  .activity-meta { font-size:10.5px; color:#888; margin-top:2px; }
+  .due-badge { font-size:10.5px; background:#fef4e8; color:var(--warning); padding:4px 10px; border-radius:12px; white-space:nowrap; border:1px solid #ffe6c8; font-weight:600; align-self:center; }
+  .section-title { font-size:17px; color:var(--primary); font-weight:700; margin:24px 0 12px 0; padding-right:12px; border-right:4px solid var(--accent); }
+  #loading { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:70vh; font-size:16px; color:#666; }
+  #loading .spinner { width:44px; height:44px; border:4px solid #e0e0e0; border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; margin-bottom:16px; }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  #error-msg { display:none; background:#f8d7da; color:#721c24; padding:16px; border-radius:8px; margin:24px auto; max-width:600px; text-align:center; font-size:14px; }
   #dashboard { display:none; }
+  .footer { text-align:center; color:#888; font-size:11px; margin-top:18px; padding:14px; }
+  @media(max-width:1000px){
+    .kpis{grid-template-columns:repeat(3,1fr);}
+    .grid-2,.grid-3,.grid-12{grid-template-columns:1fr;}
+    .companies{grid-template-columns:repeat(2,1fr);}
+  }
 </style>
 </head>
 <body>
 
-<div id="loading">
-  <div class="spinner"></div>
-  <div>جارٍ تحميل بيانات المشروع…</div>
-</div>
-
+<div id="loading"><div class="spinner"></div><div>جارٍ تحميل بيانات المشروع…</div></div>
 <div id="error-msg"></div>
 
 <div id="dashboard">
 
-  <div class="header">
-    <div>
-      <h1>📊 لوحة متابعة مشروع تنفيذ Odoo Enterprise 19</h1>
-      <div class="meta" id="header-meta">جارٍ التحميل…</div>
+<div class="header">
+  <div>
+    <h1>📊 لوحة متابعة مشروع تنفيذ Odoo Enterprise 19</h1>
+    <div class="meta" id="headerMeta">جارٍ التحميل…</div>
+  </div>
+  <div class="header-right">
+    <div class="badge" id="reportDate">📅 —</div>
+    <div class="live-stamp" id="liveStamp">—</div>
+  </div>
+</div>
+
+<div class="kpis">
+  <div class="kpi"><div class="label">نسبة الإنجاز الإجمالية</div><div class="value" id="kpiOverall">—</div><div class="sub">موزونة بمدة كل مرحلة</div></div>
+  <div class="kpi green"><div class="label">ورش العمل المكتملة</div><div class="value" id="kpiWorkshops">—</div><div class="sub" id="kpiWorkshopsSub">—</div></div>
+  <div class="kpi amber"><div class="label">BRD مستلمة</div><div class="value" id="kpiBrdRecv">—</div><div class="sub" id="kpiBrdRecvSub">—</div></div>
+  <div class="kpi amber"><div class="label">متوسط اكتمال BRD</div><div class="value" id="kpiBrdAvg">—</div><div class="sub" id="kpiBrdAvgSub">—</div></div>
+  <div class="kpi green"><div class="label">المدفوع</div><div class="value" id="kpiPaid">—</div><div class="sub" id="kpiPaidSub">—</div></div>
+  <div class="kpi red"><div class="label">المخاطر النشطة</div><div class="value" id="kpiRisks">—</div><div class="sub" id="kpiRisksSub">—</div></div>
+</div>
+
+<div class="section-title">🔄 خط أنابيب وثائق متطلبات الأعمال (BRD Pipeline)</div>
+<div class="grid grid-12">
+  <div class="card">
+    <h3><span>📊</span> توزيع الشركات على مراحل BRD</h3>
+    <div class="funnel">
+      <div class="funnel-stage s1"><div class="num">1</div><div class="label">لم تستلم</div><div class="count" id="pipS1">—</div></div>
+      <div class="funnel-stage s2"><div class="num">2</div><div class="label">قيد المراجعة الداخلية (PMO)</div><div class="count" id="pipS2">—</div></div>
+      <div class="funnel-stage s3"><div class="num">3</div><div class="label">جاهزة للإرسال لكيان</div><div class="count" id="pipS3">—</div></div>
+      <div class="funnel-stage s4"><div class="num">4</div><div class="label">قيد مراجعة كيان</div><div class="count" id="pipS4">—</div></div>
+      <div class="funnel-stage s5"><div class="num">5</div><div class="label">معتمدة (جاهزة للتنفيذ)</div><div class="count" id="pipS5">—</div></div>
     </div>
-    <div class="badge" id="last-update">—</div>
+    <div class="funnel-note">💡 تتقدم كل شركة عبر هذه المراحل من اليمين إلى اليسار حتى الاعتماد النهائي.</div>
   </div>
-
-  <!-- KPIs -->
-  <div class="kpis">
-    <div class="kpi"><div class="label">نسبة الإنجاز الإجمالية</div><div class="value" id="kpi-pct">—</div><div class="sub">محسوبة بوزن مدة كل مرحلة</div></div>
-    <div class="kpi amber"><div class="label">المراحل قيد التنفيذ</div><div class="value" id="kpi-active">—</div><div class="sub" id="kpi-active-sub">—</div></div>
-    <div class="kpi red"><div class="label">BRD متأخرة</div><div class="value" id="kpi-brd">—</div><div class="sub">من أصل 8 شركات</div></div>
-    <div class="kpi green"><div class="label">المدفوع</div><div class="value" id="kpi-paid">—</div><div class="sub" id="kpi-paid-sub">—</div></div>
-    <div class="kpi red"><div class="label">المخاطر عالية الأولوية</div><div class="value" id="kpi-risks">—</div><div class="sub">تحتاج تدخّل فوري</div></div>
-  </div>
-
-  <!-- Main grid -->
-  <div class="grid">
+  <div>
     <div class="card">
-      <h3>تقدم مراحل المشروع</h3>
-      <div class="phase-row" style="font-weight:bold;color:#666;font-size:11px">
-        <div>#</div><div>المرحلة</div><div style="text-align:center">الحالة</div><div style="text-align:center">التقدم</div><div style="text-align:center">RAG</div>
-      </div>
-      <div id="phases-rows"></div>
+      <h3><span>🎯</span> مؤشرات Pipeline</h3>
+      <table class="summary">
+        <tr><td>الشركات التي استلمت BRD</td><td id="pipRecv">—</td></tr>
+        <tr><td>الشركات التي لم تستلم</td><td id="pipNotRecv" style="color:var(--danger)">—</td></tr>
+        <tr><td>متوسط اكتمال الإجمالي</td><td id="pipAvgAll">—</td></tr>
+        <tr><td>متوسط للمستلمة فقط</td><td id="pipAvgRecv" style="color:var(--success)">—</td></tr>
+        <tr><td>نسبة التقدم في الـ Pipeline</td><td id="pipProgress">—</td></tr>
+      </table>
     </div>
-
-    <div>
-      <div class="card" style="margin-bottom:16px">
-        <h3>توزيع حالة المراحل</h3>
-        <canvas id="donut" height="180"></canvas>
-      </div>
-      <div class="card">
-        <h3>الملخص المالي</h3>
-        <table class="summary" id="financial-table"></table>
-      </div>
+    <div class="card" style="margin-top:16px">
+      <h3><span>📈</span> Pipeline بصري</h3>
+      <div class="chart-container"><canvas id="brdChart"></canvas></div>
     </div>
   </div>
+</div>
 
-  <!-- BRD Companies -->
-  <div class="card" style="margin-bottom:20px">
-    <h3>متابعة BRD للشركات الثمانية التابعة</h3>
-    <div class="companies" id="companies-grid"></div>
-  </div>
+<div class="card">
+  <h3><span>🏢</span> حالة BRD لكل شركة تابعة</h3>
+  <div class="companies" id="companiesGrid"></div>
+</div>
 
-  <!-- Payments + Gantt -->
-  <div class="grid" style="grid-template-columns:1fr 1fr">
-    <div class="card">
-      <h3 id="payments-title">جدول الدفعات</h3>
-      <div class="pay-row" style="font-weight:bold;color:#666">
-        <div>الدفعة</div><div>المبلغ</div><div style="text-align:center">الحالة</div>
-      </div>
-      <div id="payments-rows"></div>
+<div class="section-title">📌 الأنشطة (الإنجاز والتخطيط)</div>
+<div class="grid grid-2">
+  <div class="card"><h3><span>✅</span> الأنشطة المنجزة</h3><ul class="activity-list" id="doneList"></ul></div>
+  <div class="card"><h3><span>📅</span> الأنشطة المخططة للفترة القادمة</h3><ul class="activity-list" id="plannedList"></ul></div>
+</div>
+
+<div class="section-title">⚙️ تنفيذ المشروع</div>
+<div class="grid grid-3">
+  <div class="card">
+    <h3><span>📌</span> مراحل المشروع</h3>
+    <div class="phase-row" style="font-weight:600;color:#888;font-size:11px;padding:6px 0">
+      <div>#</div><div>المرحلة</div><div style="text-align:center">الحالة</div><div style="text-align:center">التقدم</div><div style="text-align:center">RAG</div>
     </div>
-
-    <div class="card">
-      <h3>الجدول الزمني</h3>
-      <div id="gantt-header" style="display:grid;gap:0;font-size:11px;color:#999;border-bottom:1px solid #eee;padding-bottom:6px;margin-bottom:8px"></div>
-      <div id="gantt-rows"></div>
-    </div>
+    <div id="phasesList"></div>
   </div>
-
-  <!-- Risks -->
-  <div class="card" style="margin-top:20px">
-    <h3>أبرز المخاطر النشطة</h3>
-    <table class="summary" style="font-size:13px">
-      <tr style="font-weight:bold;background:#f9fafc">
-        <td>المخاطرة</td><td style="text-align:center">التأثير</td><td style="text-align:center">الأولوية</td><td>المسؤول</td>
-      </tr>
-      <tbody id="risks-rows"></tbody>
+  <div class="card">
+    <h3><span>💰</span> الملخص المالي</h3>
+    <table class="summary">
+      <tr><td>قيمة العقد قبل الضريبة</td><td id="finContract">—</td></tr>
+      <tr><td>ضريبة 15%</td><td id="finVat">—</td></tr>
+      <tr><td>الإجمالي</td><td id="finTotal">—</td></tr>
+      <tr><td>المدفوع</td><td id="finPaid" style="color:var(--success)">—</td></tr>
+      <tr><td>المتبقي</td><td id="finRemaining" style="color:var(--danger)">—</td></tr>
+      <tr><td>نسبة السداد</td><td id="finPct">—</td></tr>
     </table>
   </div>
+</div>
 
-  <div class="footer" id="footer-text">مصدر البيانات: Google Sheets — يتم التحديث آلياً كل 5 دقائق · صلاحية قراءة فقط للإدارة العليا</div>
+<div class="card">
+  <h3><span>⚠️</span> المخاطر النشطة</h3>
+  <table class="summary" style="font-size:12.5px">
+    <thead><tr style="font-weight:bold;background:#f9fafc;color:var(--primary)">
+      <td>المخاطرة</td><td style="text-align:center;width:90px">التأثير</td>
+      <td style="text-align:center;width:110px">الحالة</td><td style="width:35%">إجراء التخفيف</td>
+    </tr></thead>
+    <tbody id="risksBody"></tbody>
+  </table>
+</div>
 
-</div><!-- end #dashboard -->
+<div class="footer">مصدر البيانات: Google Sheets · يتجدد تلقائياً كل 5 دقائق · صلاحية قراءة فقط للإدارة العليا</div>
+</div>
 
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbxzbTlJFGfMzUeBI6DRX6DUdEJQvbe88uNDIQX4Hkqpw0RqoFhrSw2Z-2fiemlg1A-i/exec';
-const REFRESH_MS = 5 * 60 * 1000; // 5 minutes
+const REFRESH_MS = 5 * 60 * 1000;
+let brdChartInstance = null;
 
-let donutChart = null;
+const fmtNum = (n,d=0) => (n==null||isNaN(n)) ? '—' : Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtPct = (n,d=1) => (n==null||isNaN(n)) ? '—' : (Number(n)*100).toFixed(d)+'%';
+function fmtDate(v){
+  if(!v) return '—';
+  const d=new Date(v);
+  if(isNaN(d)) return String(v).split('T')[0];
+  const m=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()}`;
+}
+function findVal(rows,key){ for(const r of rows) for(let i=0;i<r.length-1;i++) if(String(r[i]).trim()===key) return r[i+1]; return null; }
+function ragCls(v){ v=String(v||''); if(v.includes('🟢'))return 'g'; if(v.includes('🟡'))return 'a'; if(v.includes('🔴'))return 'r'; return 'w'; }
+function ragSym(v){ return{g:'✓',a:'!',r:'×',w:'·'}[ragCls(v)]; }
+function statusCls(s){ s=String(s||''); if(s.includes('مكتمل')||s.toLowerCase().includes('paid'))return 'done'; if(s.includes('قيد'))return 'prog'; if(s.includes('متأخر'))return 'late'; return 'wait'; }
 
-// ── helpers ──────────────────────────────────────────────────────────────────
-function fmt(n) { return Number(n).toLocaleString('ar-SA'); }
-function pct(n) { return (Number(n)*100).toFixed(1) + '%'; }
+function parse(raw){
+  const d={};
+  const info=raw.info||[];
+  d.client=findVal(info,'العميل'); d.executor=findVal(info,'المنفذ'); d.ref=findVal(info,'رقم العرض');
+  d.duration=findVal(info,'إجمالي مدة المشروع'); d.subCount=findVal(info,'عدد الشركات المشمولة');
+  d.currentPhase=findVal(info,'المرحلة الحالية'); d.reportDate=findVal(info,'تاريخ التقرير الحالي');
+  d.reportVer=findVal(info,'إصدار التقرير'); d.lastUpdate=findVal(info,'آخر تحديث للوحة');
+  d.preVat=Number(findVal(info,'قيمة العقد قبل الضريبة (ر.س)'))||0;
+  d.vatAmt=Number(findVal(info,'ضريبة القيمة المضافة 15%'))||0;
+  d.totalContract=Number(findVal(info,'إجمالي العقد شامل الضريبة'))||0;
 
-function ragClass(emoji) {
-  if (emoji === '🟢') return 'g';
-  if (emoji === '🟡') return 'a';
-  if (emoji === '🔴') return 'r';
-  return 'w';
-}
-function ragSymbol(emoji) {
-  if (emoji === '🟢') return '✓';
-  if (emoji === '🟡') return '!';
-  if (emoji === '🔴') return '×';
-  return '·';
-}
-function statusClass(s) {
-  if (!s) return 'wait';
-  if (s.includes('مكتمل') || s.includes('Paid') || s.includes('paid')) return 'done';
-  if (s.includes('قيد')) return 'prog';
-  if (s.includes('متأخر')) return 'late';
-  return 'wait';
-}
-function companyColor(pctVal, status) {
-  const p = Number(pctVal);
-  if (p >= 1) return 'green';
-  if (p > 0 || (status && status.includes('المراجعة'))) return 'amber';
-  return 'red';
-}
+  d.phases=[];
+  (raw.phases||[]).slice(1).forEach(r=>{ if(!r[0]||isNaN(Number(r[0])))return; d.phases.push({id:r[0],name:r[1],owner:r[2],dur:Number(r[6])||0,pct:Number(r[7])||0,status:r[8],rag:r[9]}); });
 
-// ── parse sheets ─────────────────────────────────────────────────────────────
-function findRow(rows, key) {
-  for (const r of rows) {
-    for (let i = 0; i < r.length - 1; i++) {
-      if (String(r[i]).trim() === key) return String(r[i+1]).trim();
-    }
-  }
-  return '—';
-}
+  d.companies=[];
+  (raw.companies||[]).slice(3).forEach(r=>{ if(!r[0]||isNaN(Number(r[0])))return; d.companies.push({name:r[1],biz:r[2],rep:r[3],recvDate:r[4],internal:r[5],ext:r[7],pct:Number(r[9])||0,notes:r[10]}); });
 
-function parseInfo(raw) {
-  return {
-    projectName: findRow(raw, 'اسم المشروع'),
-    client:      findRow(raw, 'العميل'),
-    executor:    findRow(raw, 'المنفذ'),
-    ref:         findRow(raw, 'رقم العرض'),
-    pm:          findRow(raw, 'مدير المشروع (المنفذ)'),
-    companies:   findRow(raw, 'عدد الشركات المشمولة'),
-    duration:    findRow(raw, 'إجمالي مدة المشروع'),
-    lastUpdate:  findRow(raw, 'آخر تحديث للوحة'),
-    total:       findRow(raw, 'إجمالي العقد شامل الضريبة'),
-    preVat:      findRow(raw, 'قيمة العقد قبل الضريبة (ر.س)'),
-    vat:         findRow(raw, 'ضريبة القيمة المضافة 15%'),
-  };
-}
+  d.pipeline={s1:0,s2:0,s3:0,s4:0,s5:0};
+  (raw.pipeline||[]).forEach((r,i)=>{ if(i>=4&&i<=8) d.pipeline['s'+(i-3)]=Number(r[3])||0; });
+  if(!d.pipeline.s1&&!d.pipeline.s2) d.companies.forEach(c=>{ const s=String(c.internal||''); if(s.includes('في الانتظار'))d.pipeline.s1++; else if(s.includes('قيد المراجعة'))d.pipeline.s2++; else if(s.includes('جاهزة'))d.pipeline.s3++; });
 
-function parseSummary(raw) {
-  const out = {};
-  for (const r of raw) {
-    const key = String(r[1]||'').trim();
-    const val = r[2];
-    if (key) out[key] = val;
-  }
-  return out;
-}
+  d.payments=[];
+  (raw.payments||[]).slice(3).forEach(r=>{ if(!r[0]||isNaN(Number(r[0])))return; d.payments.push({name:r[1],pct:r[2],amount:Number(r[6])||0,status:r[7]}); });
 
-function parsePhases(raw) {
-  // row 0 = headers
-  const phases = [];
-  for (let i = 1; i < raw.length; i++) {
-    const r = raw[i];
-    if (!r[0] || isNaN(Number(r[0]))) continue;
-    phases.push({
-      num:    r[0],
-      name:   r[1],
-      owner:  r[2],
-      start:  r[3],
-      end:    r[4],
-      actual: r[5],
-      days:   r[6],
-      pct:    Number(r[7]||0),
-      status: r[8],
-      rag:    r[9],
-      value:  r[10],
-      paid:   r[11],
-      remain: r[12],
-      payPct: r[13],
-      notes:  r[14],
-    });
-  }
-  return phases;
+  d.risks=[];
+  (raw.risks||[]).slice(3).forEach(r=>{ if(!r[0]||isNaN(Number(r[0]))||!String(r[1]||'').trim())return; d.risks.push({desc:r[1],impact:r[2],priority:r[3],owner:r[4],plan:r[5],status:r[6]}); });
+
+  d.workshops=[];
+  (raw.workshops||[]).slice(3).forEach(r=>{ if(!r[0]||isNaN(Number(r[0])))return; d.workshops.push({entity:r[1],dept:r[2],status:r[3]}); });
+
+  d.planned=[];
+  (raw.planned||[]).slice(3).forEach(r=>{ if(!r[0]||isNaN(Number(r[0])))return; d.planned.push({activity:r[1],owner:r[2],due:r[3],status:r[4]}); });
+
+  let totalDur=0,weighted=0;
+  d.phases.forEach(p=>{ totalDur+=p.dur; weighted+=p.dur*p.pct; });
+  d.overallProgress=totalDur>0?weighted/totalDur:0;
+
+  d.brdReceived=d.companies.filter(c=>c.recvDate).length;
+  d.brdNotReceived=d.companies.length-d.brdReceived;
+  const pcts=d.companies.map(c=>c.pct);
+  d.brdAvgAll=pcts.length?pcts.reduce((a,b)=>a+b,0)/pcts.length:0;
+  const rp=pcts.filter(p=>p>0); d.brdAvgRecv=rp.length?rp.reduce((a,b)=>a+b,0)/rp.length:0;
+  const t=d.pipeline.s1+d.pipeline.s2+d.pipeline.s3+d.pipeline.s4+d.pipeline.s5;
+  d.pipelineProgress=t>0?(d.pipeline.s2*1+d.pipeline.s3*2+d.pipeline.s4*3+d.pipeline.s5*4)/(t*4):0;
+  d.workshopsDone=d.workshops.filter(w=>String(w.status||'').includes('مكتملة')).length;
+  d.totalPaid=d.payments.filter(p=>String(p.status||'').toLowerCase().includes('paid')&&!String(p.status||'').toLowerCase().includes("didn't")).reduce((s,p)=>s+p.amount,0);
+  d.totalContractAmt=d.payments.reduce((s,p)=>s+p.amount,0);
+  d.pendingPay=d.totalContractAmt-d.totalPaid; d.payRatio=d.totalContractAmt>0?d.totalPaid/d.totalContractAmt:0;
+  d.activeRisks=d.risks.filter(r=>String(r.status||'').includes('نشط')).length;
+  d.highPriorityRisks=d.risks.filter(r=>String(r.priority||'').includes('عالية')&&String(r.status||'').includes('نشط')).length;
+  return d;
 }
 
-function parseCompanies(raw) {
-  const companies = [];
-  for (let i = 3; i < raw.length; i++) {
-    const r = raw[i];
-    if (!r[0] || isNaN(Number(r[0]))) continue;
-    companies.push({
-      num:      r[0],
-      name:     r[1],
-      type:     r[2],
-      rep:      r[3],
-      received: r[4],
-      internalStatus: r[5],
-      sentToKayan: r[6],
-      kayanStatus: r[7],
-      approved: r[8],
-      pct:      r[9],
-      notes:    r[10],
-    });
-  }
-  return companies;
-}
+function render(d){
+  document.getElementById('headerMeta').innerHTML=`${d.client||'—'} · المنفذ: ${d.executor||'—'} · ${d.ref||'—'} · ${d.subCount||8} شركات تابعة · ${d.duration||'—'}<br>المرحلة الحالية: <strong>${d.currentPhase||'—'}</strong>`;
+  document.getElementById('reportDate').textContent='📅 تقرير '+fmtDate(d.reportDate||d.lastUpdate)+' · '+(d.reportVer||'v1.0');
+  const now=new Date();
+  document.getElementById('liveStamp').textContent='آخر جلب: '+now.toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'})+' · '+now.toLocaleDateString('ar-SA',{day:'numeric',month:'short'});
 
-function parsePayments(raw) {
-  const payments = [];
-  for (let i = 3; i < raw.length; i++) {
-    const r = raw[i];
-    if (!r[0] || isNaN(Number(r[0]))) continue;
-    payments.push({
-      num:    r[0],
-      name:   r[1],
-      pct:    r[2],
-      cond:   r[3],
-      due:    r[4],
-      actual: r[5],
-      amount: r[6],
-      status: r[7],
-    });
-  }
-  return payments;
-}
+  document.getElementById('kpiOverall').textContent=fmtPct(d.overallProgress);
+  document.getElementById('kpiWorkshops').innerHTML=d.workshopsDone+`<span style="font-size:13px;color:#999"> / ${d.workshops.length||d.companies.length}</span>`;
+  document.getElementById('kpiWorkshopsSub').textContent=fmtPct(d.workshopsDone/Math.max(d.companies.length,1))+' من الكيانات';
+  document.getElementById('kpiBrdRecv').innerHTML=d.brdReceived+`<span style="font-size:13px;color:#999"> / ${d.companies.length}</span>`;
+  document.getElementById('kpiBrdRecvSub').textContent=d.companies.filter(c=>c.recvDate).map(c=>String(c.name).replace(/شركة\s+/g,'').split(' ')[0]).join(' + ')||'لا يوجد';
+  document.getElementById('kpiBrdAvg').textContent=fmtPct(d.brdAvgAll);
+  document.getElementById('kpiBrdAvgSub').textContent=fmtPct(d.brdAvgRecv)+' للمستلمة فقط';
+  document.getElementById('kpiPaid').textContent=fmtNum(d.totalPaid);
+  document.getElementById('kpiPaidSub').textContent='من '+fmtNum(d.totalContractAmt)+' ('+fmtPct(d.payRatio)+')';
+  document.getElementById('kpiRisks').textContent=d.activeRisks;
+  document.getElementById('kpiRisksSub').textContent='منها '+d.highPriorityRisks+' عالية الأولوية';
 
-function parseRisks(raw) {
-  const risks = [];
-  for (let i = 3; i < raw.length; i++) {
-    const r = raw[i];
-    if (!r[0] || isNaN(Number(r[0]))) continue;
-    if (!String(r[1]||'').trim()) continue;
-    risks.push({
-      num:      r[0],
-      desc:     r[1],
-      impact:   r[2],
-      priority: r[3],
-      owner:    r[4],
-      plan:     r[5],
-      status:   r[6],
-    });
-  }
-  return risks;
-}
+  ['s1','s2','s3','s4','s5'].forEach(k=>document.getElementById('pip'+k[0].toUpperCase()+k[1]).textContent=d.pipeline[k]);
+  document.getElementById('pipRecv').textContent=d.brdReceived+' / '+d.companies.length;
+  document.getElementById('pipNotRecv').textContent=d.brdNotReceived+' / '+d.companies.length;
+  document.getElementById('pipAvgAll').textContent=fmtPct(d.brdAvgAll);
+  document.getElementById('pipAvgRecv').textContent=fmtPct(d.brdAvgRecv);
+  document.getElementById('pipProgress').textContent=fmtPct(d.pipelineProgress);
 
-// ── render ────────────────────────────────────────────────────────────────────
-function render(data) {
-  const info      = parseInfo(data.info);
-  const summary   = parseSummary(data.summary);
-  const phases    = parsePhases(data.phases);
-  const companies = parseCompanies(data.companies);
-  const payments  = parsePayments(data.payments);
-  const risks     = parseRisks(data.risks);
-
-  // Header
-  document.getElementById('header-meta').textContent =
-    `${info.client} · المنفذ: ${info.executor} · ${info.ref} · ${info.companies} شركات تابعة · ${info.duration}`;
-  document.getElementById('last-update').textContent =
-    'آخر تحديث: ' + (info.lastUpdate !== '—' ? new Date(info.lastUpdate).toLocaleDateString('ar-SA') : new Date().toLocaleDateString('ar-SA'));
-
-  // KPIs
-  const overallPct = summary['نسبة الإنجاز الإجمالية للمشروع'];
-  document.getElementById('kpi-pct').textContent = overallPct !== undefined ? pct(overallPct) : '—';
-
-  const activePhases = phases.filter(p => String(p.status).includes('قيد'));
-  document.getElementById('kpi-active').innerHTML =
-    `${activePhases.length}<span style="font-size:16px;color:#999"> / ${phases.length}</span>`;
-  document.getElementById('kpi-active-sub').textContent =
-    activePhases.length ? activePhases[0].name.split('-')[0].trim() + ' (' + pct(activePhases[0].pct) + ')' : 'لا توجد مراحل نشطة';
-
-  const brdLate = summary['BRD متأخرة'];
-  document.getElementById('kpi-brd').innerHTML =
-    `${Number(brdLate)||0}<span style="font-size:16px;color:#999"> / ${companies.length}</span>`;
-
-  const totalPaid = summary['المدفوع حتى الآن'];
-  const totalContract = summary['قيمة العقد قبل الضريبة'];
-  const payRatio = summary['نسبة السداد'];
-  document.getElementById('kpi-paid').textContent = totalPaid !== undefined ? fmt(totalPaid) : '—';
-  document.getElementById('kpi-paid-sub').textContent =
-    `من ${totalContract ? fmt(totalContract) : '—'} ر.س (${payRatio !== undefined ? pct(payRatio) : '—'})`;
-
-  const highRisks = summary['المخاطر عالية الأولوية'];
-  document.getElementById('kpi-risks').textContent = Number(highRisks)||0;
-
-  // Phases rows
-  const phasesEl = document.getElementById('phases-rows');
-  phasesEl.innerHTML = phases.map(p => {
-    const pctVal = Math.round(p.pct * 100);
-    const sc = statusClass(p.status);
-    const rc = ragClass(p.rag);
-    const rs = ragSymbol(p.rag);
-    return `<div class="phase-row">
-      <div>${p.num}</div>
-      <div title="${p.name}">${p.name}</div>
-      <div><span class="status ${sc}">${p.status||'—'}</span></div>
-      <div class="progress-bar"><div class="progress-fill" style="width:${pctVal}%">${pctVal > 10 ? pctVal+'%' : ''}</div></div>
-      <div style="text-align:center"><span class="rag ${rc}">${rs}</span></div>
-    </div>`;
-  }).join('');
-
-  // Donut chart
-  const counts = { done:0, prog:0, late:0, wait:0 };
-  phases.forEach(p => {
-    const sc = statusClass(p.status);
-    counts[sc] = (counts[sc]||0) + 1;
+  if(brdChartInstance) brdChartInstance.destroy();
+  brdChartInstance=new Chart(document.getElementById('brdChart').getContext('2d'),{
+    type:'bar',
+    data:{labels:['لم تستلم','مراجعة داخلية','جاهزة لكيان','مراجعة كيان','معتمدة'],
+      datasets:[{label:'عدد الشركات',data:[d.pipeline.s1,d.pipeline.s2,d.pipeline.s3,d.pipeline.s4,d.pipeline.s5],
+      backgroundColor:['#C00000','#ED7D31','#FFC000','#4472C4','#70AD47'],borderRadius:6,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{beginAtZero:true,max:Math.max(d.companies.length,8),ticks:{stepSize:1,font:{family:'Tahoma',size:11}},grid:{color:'#eef2f7'}},
+              y:{ticks:{font:{family:'Tahoma',size:11},color:'#1a2b4a'},grid:{display:false}}}}
   });
-  const donutData = [counts.prog, counts.late, counts.wait, counts.done];
-  const donutLabels = ['قيد التنفيذ','متأخرة','لم تبدأ','مكتملة'];
-  const donutColors = ['#4472C4','#C00000','#BFBFBF','#70AD47'];
 
-  if (donutChart) {
-    donutChart.data.datasets[0].data = donutData;
-    donutChart.update();
-  } else {
-    const ctx = document.getElementById('donut').getContext('2d');
-    donutChart = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: donutLabels,
-        datasets: [{ data: donutData, backgroundColor: donutColors, borderWidth: 0 }]
-      },
-      options: {
-        plugins: { legend: { position: 'bottom', labels: { font: { family: 'Tahoma' } } } },
-        cutout: '60%'
-      }
-    });
-  }
-
-  // Financial table
-  const fin = document.getElementById('financial-table');
-  const preVat = Number(info.preVat) || Number(totalContract) || 0;
-  const vatAmt = Math.round(preVat * 0.15);
-  const total  = preVat + vatAmt;
-  const paid   = Number(totalPaid) || 0;
-  const remain = Number(summary['المتبقي من الدفعات']) || (total - paid);
-  fin.innerHTML = `
-    <tr><td>قيمة العقد قبل الضريبة</td><td>${fmt(preVat)}</td></tr>
-    <tr><td>ضريبة 15%</td><td>${fmt(vatAmt)}</td></tr>
-    <tr><td>الإجمالي</td><td>${fmt(total)}</td></tr>
-    <tr><td>المدفوع</td><td style="color:#70AD47">${fmt(paid)}</td></tr>
-    <tr><td>المتبقي</td><td style="color:#C00000">${fmt(remain)}</td></tr>
-    <tr><td>نسبة السداد</td><td>${payRatio !== undefined ? pct(payRatio) : '—'}</td></tr>
-  `;
-
-  // Companies grid
-  const compEl = document.getElementById('companies-grid');
-  compEl.innerHTML = companies.map(c => {
-    const p = Number(c.pct) || 0;
-    const color = companyColor(p, c.internalStatus);
+  document.getElementById('companiesGrid').innerHTML=d.companies.map(c=>{
+    const p=c.pct; let color='red',cv='var(--danger)';
+    if(p>=0.8){color='green';cv='var(--success)';}
+    else if(p>0||c.recvDate){color='amber';cv='var(--warning)';}
     return `<div class="company-card ${color}">
       <div class="name">${c.name}</div>
-      <div class="stage">${c.type||''} · ${c.internalStatus||'في الانتظار'}</div>
-      <div class="pct">${Math.round(p*100)}%</div>
+      <div class="meta">${c.biz||'—'}${c.rep?' · '+c.rep:''}</div>
+      <div class="cprog"><div class="cprog-fill" style="width:${p*100}%;background:${cv}"></div></div>
+      <div class="pct-text" style="color:${cv}">${fmtPct(p,1)}</div>
+      ${c.recvDate?`<div class="recv-date">📩 استُلمت في: ${fmtDate(c.recvDate)}</div>`:''}
+      <div class="status-chip" style="color:${cv}">${c.internal||'—'}</div>
     </div>`;
   }).join('');
 
-  // Payments
-  const totalContract2 = preVat + vatAmt;
-  document.getElementById('payments-title').textContent = `جدول الدفعات (${fmt(totalContract2)} ر.س)`;
-  const payEl = document.getElementById('payments-rows');
-  payEl.innerHTML = payments.map(p => {
-    const isPaid = String(p.status).toLowerCase().includes('paid');
-    return `<div class="pay-row">
-      <div>${p.name} (${p.pct})</div>
-      <div class="${isPaid ? 'pay-paid' : 'pay-due'}">${fmt(p.amount)} ر.س</div>
-      <div style="text-align:center"><span class="status ${isPaid ? 'done' : 'wait'}">${isPaid ? 'مدفوعة' : 'مستحقة'}</span></div>
+  document.getElementById('doneList').innerHTML=d.workshops.filter(w=>String(w.status||'').includes('مكتملة')).map(w=>
+    `<li><div class="icon-circle icon-done">✓</div><div><div class="activity-text">${String(w.entity||'').split('-').pop().trim()}</div><div class="activity-meta">${w.dept||''}</div></div><div></div></li>`
+  ).join('');
+
+  document.getElementById('plannedList').innerHTML=d.planned.map((a,i)=>
+    `<li><div class="icon-circle icon-plan">${i+1}</div><div><div class="activity-text">${String(a.activity||'').split('-').pop().trim()}</div>${a.owner?`<div class="activity-meta">المسؤول: ${a.owner}</div>`:''}</div>${a.due?`<div class="due-badge">${fmtDate(a.due)}</div>`:'<div></div>'}</li>`
+  ).join('');
+
+  document.getElementById('phasesList').innerHTML=d.phases.map(p=>{
+    const pv=p.pct*100;
+    return `<div class="phase-row">
+      <div>${p.id}</div>
+      <div title="${p.name}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</div>
+      <div><span class="status ${statusCls(p.status)}">${p.status||'—'}</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pv}%">${pv>10?Math.round(pv)+'%':''}</div></div>
+      <div><span class="rag ${ragCls(p.rag)}">${ragSym(p.rag)}</span></div>
     </div>`;
   }).join('');
 
-  // Gantt
-  const months = [...new Set(phases.map(p => {
-    const d = new Date(p.start);
-    return isNaN(d) ? null : d.toLocaleDateString('ar-SA', { month: 'long' });
-  }).filter(Boolean))].slice(0, 4);
+  document.getElementById('finContract').textContent=fmtNum(d.preVat)+' ر.س';
+  document.getElementById('finVat').textContent=fmtNum(d.vatAmt)+' ر.س';
+  document.getElementById('finTotal').textContent=fmtNum(d.totalContract)+' ر.س';
+  document.getElementById('finPaid').textContent=fmtNum(d.totalPaid)+' ر.س';
+  document.getElementById('finRemaining').textContent=fmtNum(d.pendingPay)+' ر.س';
+  document.getElementById('finPct').textContent=fmtPct(d.payRatio);
 
-  const ganttHeader = document.getElementById('gantt-header');
-  ganttHeader.style.gridTemplateColumns = `200px repeat(${months.length||4},1fr)`;
-  ganttHeader.innerHTML = '<div></div>' + (months.length ? months : ['يناير','فبراير','مارس','أبريل'])
-    .map(m => `<div style="text-align:center">${m}</div>`).join('');
-
-  // Compute gantt positions relative to first start date
-  const startDates = phases.map(p => new Date(p.start)).filter(d => !isNaN(d));
-  const minDate = startDates.length ? Math.min(...startDates) : Date.now();
-  const allEndDates = phases.map(p => new Date(p.end)).filter(d => !isNaN(d));
-  const maxDate = allEndDates.length ? Math.max(...allEndDates) : minDate + 30*24*3600*1000;
-  const totalSpan = maxDate - minDate || 1;
-
-  const ragColors = { g:'#70AD47', a:'#ED7D31', r:'#C00000', w:'#BFBFBF' };
-
-  const ganttEl = document.getElementById('gantt-rows');
-  ganttEl.innerHTML = phases.map(p => {
-    const s = new Date(p.start), e = new Date(p.end);
-    let left = 0, width = 20;
-    if (!isNaN(s) && !isNaN(e)) {
-      left  = Math.max(0, Math.min(95, ((s - minDate) / totalSpan) * 100));
-      width = Math.max(4, Math.min(100 - left, ((e - s) / totalSpan) * 100));
-    }
-    const color = ragColors[ragClass(p.rag)] || '#BFBFBF';
-    const pctVal = Math.round(p.pct * 100);
-    // Short label for gantt
-    const shortName = p.name.length > 28 ? p.name.substring(0, 28) + '…' : p.name;
-    return `<div class="gantt-row">
-      <div title="${p.name}">${p.num}. ${shortName}</div>
-      <div class="gantt-track">
-        <div class="gantt-bar" style="background:${color};right:${left}%;width:${width}%">${pctVal ? pctVal+'%' : ''}</div>
-      </div>
-    </div>`;
+  document.getElementById('risksBody').innerHTML=d.risks.map(r=>{
+    const ic=String(r.impact||'').includes('عالي')?'late':'prog';
+    const sc=String(r.status||'').includes('نشط')?'late':'wait';
+    return `<tr><td>${r.desc}</td><td style="text-align:center"><span class="status ${ic}">${r.impact||'—'}</span></td><td style="text-align:center"><span class="status ${sc}">${r.status||'—'}</span></td><td>${r.plan||'—'}</td></tr>`;
   }).join('');
 
-  // Risks
-  const risksEl = document.getElementById('risks-rows');
-  risksEl.innerHTML = risks.map(r => {
-    const impactClass = String(r.impact).includes('عال') ? 'late' : 'prog';
-    const prioClass   = String(r.priority).includes('عال') ? 'late' : 'prog';
-    return `<tr>
-      <td>${r.desc}</td>
-      <td style="text-align:center"><span class="status ${impactClass}">${r.impact}</span></td>
-      <td style="text-align:center"><span class="status ${prioClass}">${r.priority}</span></td>
-      <td>${r.owner||'—'}</td>
-    </tr>`;
-  }).join('');
-
-  // Show dashboard
-  document.getElementById('loading').style.display = 'none';
-  document.getElementById('dashboard').style.display = 'block';
+  document.getElementById('loading').style.display='none';
+  document.getElementById('dashboard').style.display='block';
 }
 
-// ── fetch & refresh ───────────────────────────────────────────────────────────
-async function loadData() {
-  try {
-    const res = await fetch(API_URL);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    render(data);
-  } catch (err) {
-    document.getElementById('loading').style.display = 'none';
-    const errEl = document.getElementById('error-msg');
-    errEl.style.display = 'block';
-    errEl.textContent = 'تعذّر تحميل البيانات: ' + err.message + ' — يرجى التحقق من رابط Apps Script أو إعادة المحاولة.';
+async function loadData(){
+  try{
+    const res=await fetch(API_URL+'?t='+Date.now());
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    render(parse(await res.json()));
+  }catch(err){
+    document.getElementById('loading').style.display='none';
+    const el=document.getElementById('error-msg');
+    el.style.display='block';
+    el.textContent='تعذّر تحميل البيانات: '+err.message;
   }
 }
 
 loadData();
-setInterval(loadData, REFRESH_MS);
+setInterval(loadData,REFRESH_MS);
 </script>
-
 </body>
 </html>
