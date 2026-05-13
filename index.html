@@ -507,23 +507,39 @@ function deriveRag(status, pct){
   return 'grey'; // لم تبدأ / not started / unknown
 }
 
-/* Fix end dates that ended up before start dates (Excel MDY/DMY parsing bug).
-   If end < start, try swapping the day/month components of the ISO date. */
-function sanitizeEnd(start, end, days){
-  const ps = new Date(start).getTime();
-  const pe = new Date(end).getTime();
-  if(isNaN(ps) || isNaN(pe)) return end;
-  if(pe >= ps) return end;
-  // Swap month <-> day in ISO YYYY-MM-DD
-  const m = String(end).match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if(m){
-    const swapped = `${m[1]}-${m[3]}-${m[2]}`;
-    const ts = new Date(swapped).getTime();
-    if(!isNaN(ts) && ts >= ps) return swapped;
+/* Fix MDY/DMY parsing bugs on BOTH start and end dates.
+   Strategy: Excel/Sheets may parse "1/4/2026" as Jan 4 (MDY) when Arabic context
+   means April 1 (DMY). We generate all swap candidates and pick the combination
+   whose duration best matches the "Days" column from Excel. */
+function swapDayMonth(d){
+  const m = String(d).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return null;
+  const day = parseInt(m[3]), month = parseInt(m[2]);
+  // Only ambiguous when both ≤12 and different
+  if(day > 12 || month > 12 || day === month || day === 0 || month === 0) return null;
+  return `${m[1]}-${m[3]}-${m[2]}`;
+}
+
+function sanitizePhase(start, end, days){
+  const expectedDur = (Number(days)||14) * 24*3600*1000;
+  const startCandidates = [start];
+  const sSwap = swapDayMonth(start); if(sSwap) startCandidates.push(sSwap);
+  const endCandidates = [end];
+  const eSwap = swapDayMonth(end);   if(eSwap) endCandidates.push(eSwap);
+
+  let best = {start, end, score: Infinity};
+  for(const s of startCandidates){
+    for(const e of endCandidates){
+      const ts = new Date(s).getTime();
+      const te = new Date(e).getTime();
+      if(isNaN(ts) || isNaN(te)) continue;
+      if(te < ts) continue; // skip invalid (end before start)
+      const actual = te - ts;
+      const score = Math.abs(actual - expectedDur);
+      if(score < best.score){ best = {start:s, end:e, score}; }
+    }
   }
-  // Last resort: start + days
-  const dur = (Number(days)||7) * 24*3600*1000;
-  return new Date(ps + dur).toISOString().substring(0,10);
+  return {start: best.start, end: best.end};
 }
 function pctNum(v){
   if(isNum(v)){
@@ -583,13 +599,13 @@ function parsePhases(rows){
   for(let i=1;i<rows.length;i++){
     const r = rows[i];
     if(isEmpty(r[0])) continue;
-    const start = fmtDate(r[3]);
-    let end = fmtDate(r[4]);
-    // Fix MDY/DMY broken end dates
-    end = sanitizeEnd(start, end, r[6]);
+    const startRaw = fmtDate(r[3]);
+    const endRaw = fmtDate(r[4]);
+    // Fix MDY/DMY parsing bugs on both start and end using Days column as truth
+    const fixed = sanitizePhase(startRaw, endRaw, r[6]);
     out.push({
       n: r[0], name: r[1], owner: r[2],
-      start, end, actual: fmtDate(r[5]),
+      start: fixed.start, end: fixed.end, actual: fmtDate(r[5]),
       days: r[6], pct: pctNum(r[7]), status: r[8],
       // Derive RAG from status + progress, ignoring (potentially stale) Excel emoji
       rag: deriveRag(r[8], r[7]),
