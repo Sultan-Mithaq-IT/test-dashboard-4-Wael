@@ -1,432 +1,1224 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<title>لوحة متابعة Odoo Enterprise 19 — الإدارة العليا</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>لوحة متابعة مشروع Odoo 19 | Mithaquna × Kayan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-  * { box-sizing: border-box; }
-  :root {
-    --primary: #1F4E78; --accent: #2E75B6;
-    --success: #70AD47; --warning: #ED7D31;
-    --danger: #C00000; --gold: #FFC000;
-    --muted: #888; --text: #1a2b4a;
-    --card-shadow: 0 2px 12px rgba(31,78,120,0.08);
-  }
-  body {
-    font-family:'Tahoma','Segoe UI',Arial,sans-serif;
-    margin:0; padding:20px;
-    background:linear-gradient(135deg,#f5f8fc 0%,#e8eef5 100%);
-    color:var(--text); line-height:1.5;
-  }
-  .header {
-    background:linear-gradient(135deg,var(--primary),var(--accent));
-    color:white; padding:22px 28px; border-radius:12px;
-    display:flex; justify-content:space-between; align-items:center;
-    box-shadow:0 6px 20px rgba(31,78,120,0.25);
-    margin-bottom:20px; flex-wrap:wrap; gap:12px;
-  }
-  .header h1 { margin:0; font-size:22px; font-weight:700; }
-  .header .meta { font-size:12px; opacity:0.92; margin-top:6px; line-height:1.7; }
-  .header-right { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
-  .badge {
-    background:rgba(255,255,255,0.18); padding:8px 16px;
-    border-radius:24px; font-size:12px; font-weight:bold;
-    border:1px solid rgba(255,255,255,0.25); white-space:nowrap;
-  }
-  .live-stamp { font-size:11px; opacity:0.7; }
-  .kpis { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:20px; }
-  .kpi {
-    background:white; padding:16px; border-radius:10px;
-    box-shadow:var(--card-shadow); border-top:3px solid var(--accent);
-    transition:transform 0.2s;
-  }
-  .kpi:hover { transform:translateY(-2px); }
-  .kpi.green { border-top-color:var(--success); }
-  .kpi.amber { border-top-color:var(--warning); }
-  .kpi.red   { border-top-color:var(--danger); }
-  .kpi .label { color:#6b7a90; font-size:11.5px; margin-bottom:6px; font-weight:500; }
-  .kpi .value { font-size:26px; font-weight:700; color:var(--primary); line-height:1; }
-  .kpi .sub   { font-size:11px; color:var(--muted); margin-top:6px; }
-  .card {
-    background:white; padding:22px; border-radius:10px;
-    box-shadow:var(--card-shadow); margin-bottom:16px;
-  }
-  .card h3 {
-    margin:0 0 18px 0; color:var(--primary);
-    border-bottom:2px solid #eef2f7; padding-bottom:12px;
-    font-size:15px; font-weight:700; display:flex; align-items:center; gap:8px;
-  }
-  .grid { display:grid; gap:16px; margin-bottom:16px; }
-  .grid-2  { grid-template-columns:1fr 1fr; }
-  .grid-3  { grid-template-columns:2fr 1fr; }
-  .grid-12 { grid-template-columns:1.4fr 1fr; }
-  .funnel { display:flex; flex-direction:column; gap:10px; }
-  .funnel-stage {
-    display:grid; grid-template-columns:36px 1fr 70px; gap:12px;
-    align-items:center; padding:14px 16px; border-radius:8px;
-    color:white; font-weight:600;
-  }
-  .funnel-stage .num {
-    width:26px; height:26px; border-radius:50%;
-    background:rgba(255,255,255,0.25); display:flex;
-    align-items:center; justify-content:center; font-size:12px;
-  }
-  .funnel-stage .label { font-size:13px; }
-  .funnel-stage .count {
-    font-size:20px; font-weight:700; text-align:center;
-    background:rgba(255,255,255,0.2); padding:4px 0; border-radius:6px;
-  }
-  .funnel-stage.s1 { background:linear-gradient(135deg,#C00000,#a00000); width:100%; }
-  .funnel-stage.s2 { background:linear-gradient(135deg,#ED7D31,#c66423); width:88%; }
-  .funnel-stage.s3 { background:linear-gradient(135deg,#FFC000,#d49d00); width:76%; color:#5a4500; }
-  .funnel-stage.s4 { background:linear-gradient(135deg,#4472C4,#305f9c); width:64%; }
-  .funnel-stage.s5 { background:linear-gradient(135deg,#70AD47,#4d8a2d); width:52%; }
-  .funnel-stage.s3 .num,.funnel-stage.s3 .count { background:rgba(0,0,0,0.12); }
-  .funnel-note {
-    margin-top:14px; padding:12px; background:#f9fafc;
-    border-radius:8px; border-right:3px solid var(--accent);
-    font-size:12px; color:#555;
-  }
-  .chart-container { position:relative; height:220px; width:100%; }
-  .companies { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
-  .company-card {
-    padding:14px; border-radius:10px; background:#f9fafc;
-    border-right:4px solid #BFBFBF; font-size:12px; transition:box-shadow 0.2s;
-  }
-  .company-card:hover { box-shadow:0 2px 8px rgba(0,0,0,0.1); }
-  .company-card.green { border-right-color:var(--success); background:#f4faec; }
-  .company-card.amber { border-right-color:var(--warning); background:#fef4e8; }
-  .company-card.red   { border-right-color:var(--danger);  background:#fdebec; }
-  .company-card .name { font-weight:700; color:var(--primary); margin-bottom:4px; font-size:13px; }
-  .company-card .meta { color:#6b7a90; font-size:10.5px; margin-bottom:8px; }
-  .company-card .cprog { background:white; border-radius:6px; height:8px; margin-top:8px; overflow:hidden; box-shadow:inset 0 1px 2px rgba(0,0,0,0.06); }
-  .company-card .cprog-fill { height:100%; border-radius:6px; }
-  .company-card .pct-text { font-size:16px; font-weight:700; margin-top:4px; }
-  .company-card .recv-date { font-size:10px; color:#888; margin-top:4px; font-style:italic; }
-  .company-card .status-chip { display:inline-block; font-size:9.5px; padding:2px 6px; border-radius:10px; background:white; font-weight:600; margin-top:6px; }
-  table.summary { width:100%; border-collapse:collapse; font-size:13px; }
-  table.summary td { padding:9px 6px; border-bottom:1px solid #f0f0f0; }
-  table.summary td:first-child { color:#6b7a90; }
-  table.summary td:last-child { font-weight:700; text-align:left; color:var(--primary); }
-  .phase-row {
-    display:grid; grid-template-columns:26px 1fr 100px 130px 50px;
-    gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid #f0f0f0; font-size:12.5px;
-  }
-  .phase-row:last-child { border-bottom:none; }
-  .progress-bar { background:#eef2f7; border-radius:10px; height:16px; position:relative; overflow:hidden; }
-  .progress-fill {
-    height:100%; border-radius:10px;
-    background:linear-gradient(90deg,var(--accent),var(--primary));
-    display:flex; align-items:center; justify-content:flex-end;
-    padding-left:6px; color:white; font-size:10px; font-weight:bold;
-  }
-  .rag { width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; margin:0 auto; color:white; font-weight:bold; }
-  .rag.g{background:var(--success);} .rag.a{background:var(--warning);} .rag.r{background:var(--danger);} .rag.w{background:#bfbfbf;}
-  .status { font-size:10px; padding:3px 9px; border-radius:12px; text-align:center; font-weight:600; display:inline-block; }
-  .status.done{background:#d4edda;color:#155724;} .status.prog{background:#cce5ff;color:#004085;}
-  .status.wait{background:#e2e3e5;color:#383d41;} .status.late{background:#f8d7da;color:#721c24;}
-  .activity-list { list-style:none; padding:0; margin:0; }
-  .activity-list li { display:grid; grid-template-columns:32px 1fr auto; gap:12px; align-items:start; padding:11px 0; border-bottom:1px solid #f0f0f0; font-size:13px; }
-  .activity-list li:last-child { border-bottom:none; }
-  .icon-circle { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:13px; flex-shrink:0; }
-  .icon-done{background:var(--success);} .icon-plan{background:var(--warning);}
-  .activity-text { line-height:1.5; padding-top:3px; }
-  .activity-meta { font-size:10.5px; color:#888; margin-top:2px; }
-  .due-badge { font-size:10.5px; background:#fef4e8; color:var(--warning); padding:4px 10px; border-radius:12px; white-space:nowrap; border:1px solid #ffe6c8; font-weight:600; align-self:center; }
-  .section-title { font-size:17px; color:var(--primary); font-weight:700; margin:24px 0 12px 0; padding-right:12px; border-right:4px solid var(--accent); }
-  #loading { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:70vh; font-size:16px; color:#666; }
-  #loading .spinner { width:44px; height:44px; border:4px solid #e0e0e0; border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; margin-bottom:16px; }
-  @keyframes spin{to{transform:rotate(360deg);}}
-  #error-msg { display:none; background:#f8d7da; color:#721c24; padding:16px; border-radius:8px; margin:24px auto; max-width:600px; text-align:center; font-size:14px; }
-  #dashboard { display:none; }
-  .footer { text-align:center; color:#888; font-size:11px; margin-top:18px; padding:14px; }
-  @media(max-width:1000px){
-    .kpis{grid-template-columns:repeat(3,1fr);}
-    .grid-2,.grid-3,.grid-12{grid-template-columns:1fr;}
-    .companies{grid-template-columns:repeat(2,1fr);}
-  }
+:root{
+  --navy:#0A2540; --navy-2:#102d54; --navy-3:#163966;
+  --gold:#C9A961; --gold-2:#E0C078; --gold-3:#A88838;
+  --bg:#F5F6F8; --card:#ffffff; --ink:#0A2540; --ink-2:#3a4a64;
+  --muted:#6b7a90; --line:#e5e9f0;
+  --green:#22A06B; --amber:#F2A93B; --red:#E04848; --grey:#9aa4b2;
+  --blue-soft:#E8EEF7;
+  --shadow:0 2px 8px rgba(10,37,64,.06), 0 12px 40px rgba(10,37,64,.05);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+  font-family:'Cairo','Inter',system-ui,-apple-system,sans-serif;
+  font-size:14px; line-height:1.5;}
+.en{font-family:'Inter',sans-serif}
+.wrap{max-width:1380px;margin:0 auto;padding:18px 22px 60px}
+
+/* ===== HEADER ===== */
+.topbar{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-3) 100%);
+  color:#fff;border-radius:14px;padding:22px 26px;box-shadow:var(--shadow);
+  position:relative;overflow:hidden}
+.topbar::before{content:"";position:absolute;right:-80px;top:-80px;width:280px;height:280px;border-radius:50%;
+  background:radial-gradient(circle,rgba(201,169,97,.18) 0%,rgba(201,169,97,0) 70%)}
+.topbar-grid{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:start;position:relative;z-index:1}
+.brand{display:flex;align-items:center;gap:14px}
+.logo-mark{width:54px;height:54px;border-radius:12px;background:linear-gradient(135deg,var(--gold) 0%,var(--gold-3) 100%);
+  display:flex;align-items:center;justify-content:center;font-weight:900;color:var(--navy);font-size:22px;
+  box-shadow:0 4px 14px rgba(201,169,97,.35);font-family:'Inter',sans-serif}
+.brand h1{margin:0;font-size:20px;font-weight:800;letter-spacing:.2px}
+.brand h1 small{display:block;font-weight:500;color:var(--gold-2);font-size:13px;margin-top:3px}
+.proj-meta{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px}
+.proj-meta .item{font-size:12.5px;color:#cfd8e6}
+.proj-meta .item b{color:#fff;font-weight:600}
+.tag-row{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+.tag{background:rgba(255,255,255,.08);border:1px solid rgba(201,169,97,.45);
+  color:var(--gold-2);font-size:12px;padding:5px 11px;border-radius:999px;font-weight:600}
+.tag.live{background:rgba(34,160,107,.18);color:#7CE0AE;border-color:rgba(34,160,107,.5)}
+.tag.gold{background:var(--gold);color:var(--navy);border-color:var(--gold-3)}
+.updated{color:#cfd8e6;font-size:12px;margin-top:8px;text-align:left;direction:ltr}
+.refresh-btn{background:var(--gold);color:var(--navy);border:none;border-radius:8px;
+  padding:8px 14px;font-family:inherit;font-weight:800;font-size:12.5px;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;margin-top:6px;transition:.2s;
+  box-shadow:0 2px 8px rgba(201,169,97,.35)}
+.refresh-btn:hover{background:var(--gold-2);transform:translateY(-1px)}
+.refresh-btn:disabled{opacity:.6;cursor:wait}
+.refresh-btn .spin{display:inline-block;animation:spin 1s linear infinite}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+
+/* ===== TABS ===== */
+.tabs{margin-top:14px;background:#fff;border-radius:12px;display:flex;gap:0;overflow:hidden;
+  box-shadow:var(--shadow);padding:6px}
+.tabs button{flex:1;background:transparent;border:none;color:var(--ink-2);font-family:inherit;font-weight:700;
+  font-size:14.5px;padding:13px 14px;border-radius:8px;cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:8px}
+.tabs button .en-sub{font-family:'Inter',sans-serif;font-weight:500;font-size:11.5px;color:var(--muted);margin-inline-start:6px}
+.tabs button:hover{background:#f4f6fa;color:var(--navy)}
+.tabs button.active{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-3) 100%);color:#fff}
+.tabs button.active .en-sub{color:var(--gold-2)}
+
+/* ===== SECTION ===== */
+.page{display:none;margin-top:18px}
+.page.active{display:block}
+.section-title{display:flex;align-items:center;gap:10px;margin:18px 0 10px;font-size:15px;font-weight:800;color:var(--navy)}
+.section-title::before{content:"";width:4px;height:18px;background:var(--gold);border-radius:3px}
+.section-title .en{font-weight:500;color:var(--muted);font-size:12px;margin-inline-start:6px}
+
+/* ===== KPI ===== */
+.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.kpi{background:var(--card);border-radius:12px;padding:14px 14px;box-shadow:var(--shadow);
+  border-top:3px solid var(--gold);position:relative;overflow:hidden}
+.kpi.green{border-top-color:var(--green)} .kpi.amber{border-top-color:var(--amber)}
+.kpi.red{border-top-color:var(--red)}     .kpi.navy{border-top-color:var(--navy)}
+.kpi .label{font-size:12px;color:var(--muted);font-weight:600;margin-bottom:6px}
+.kpi .value{font-size:24px;font-weight:800;color:var(--navy);line-height:1.1}
+.kpi .value small{font-size:13px;color:var(--muted);font-weight:600;margin-inline-start:4px}
+.kpi .sub{font-size:11.5px;color:var(--ink-2);margin-top:4px}
+
+/* ===== GRIDS / CARDS ===== */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.grid-1-2{display:grid;grid-template-columns:380px 1fr;gap:14px}
+.grid-2-1{display:grid;grid-template-columns:1fr 380px;gap:14px}
+.card{background:var(--card);border-radius:12px;padding:16px 16px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 12px;font-size:14.5px;font-weight:800;color:var(--navy);
+  display:flex;align-items:center;gap:8px}
+.card h3 .en{font-weight:500;color:var(--muted);font-size:11.5px}
+.card h3 .pill{margin-inline-start:auto;font-size:11px;padding:3px 10px;border-radius:999px;
+  background:var(--blue-soft);color:var(--navy);font-weight:700}
+
+/* ===== GAUGE ===== */
+.gauge-wrap{position:relative;height:200px;display:flex;align-items:center;justify-content:center}
+.gauge-value{position:absolute;text-align:center;color:var(--navy);top:55%;left:0;right:0}
+.gauge-value .big{font-size:36px;font-weight:900;color:var(--navy)}
+.gauge-value .lbl{font-size:11px;color:var(--muted);font-weight:600}
+
+/* ===== BARS ===== */
+.bar-wrap{background:#eef1f6;height:10px;border-radius:6px;overflow:hidden;position:relative;margin-top:6px}
+.bar{height:100%;background:linear-gradient(90deg,var(--gold-3),var(--gold));border-radius:6px;transition:width .8s}
+.bar.green{background:linear-gradient(90deg,var(--green),#2dc985)}
+.bar.amber{background:linear-gradient(90deg,var(--amber),#ffc66e)}
+.bar.red{background:linear-gradient(90deg,var(--red),#ff7575)}
+.bar.grey{background:linear-gradient(90deg,#c1c8d4,#dde2eb)}
+.bar-row{margin-bottom:10px}
+.bar-row .top{display:flex;justify-content:space-between;align-items:center;font-size:12.5px}
+.bar-row .top b{color:var(--navy);font-weight:700}
+
+/* ===== GANTT ===== */
+.gantt{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.gantt-header{display:grid;grid-template-columns:280px 1fr;gap:14px;color:var(--muted);font-size:11px;
+  font-weight:700;padding-bottom:6px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.gantt-row{display:grid;grid-template-columns:280px 1fr;gap:14px;align-items:center}
+.gantt-row .ttl{font-size:12.5px;font-weight:700;color:var(--navy)}
+.gantt-row .ttl small{display:block;color:var(--muted);font-weight:500;font-size:11px;margin-top:2px}
+.gantt-track{position:relative;height:30px;background:#f3f5f9;border-radius:6px;overflow:hidden}
+.gantt-bar{position:absolute;top:4px;bottom:4px;border-radius:5px;display:flex;align-items:center;
+  padding:0 8px;font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden}
+.gantt-bar.green{background:var(--green)} .gantt-bar.amber{background:var(--amber)}
+.gantt-bar.red{background:var(--red)}     .gantt-bar.grey{background:var(--grey)}
+.today-line{position:absolute;top:0;bottom:0;width:2px;background:var(--gold);z-index:5}
+.today-line::before{content:"اليوم • Today";position:absolute;top:-18px;left:-26px;font-size:9px;
+  color:var(--gold-3);font-weight:800;white-space:nowrap}
+
+/* ===== TABLE ===== */
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+table thead th{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-2) 100%);color:#fff;
+  font-weight:700;padding:9px 10px;text-align:right;font-size:12px}
+table thead th:first-child{border-radius:8px 0 0 0}
+table thead th:last-child{border-radius:0 8px 0 0}
+table tbody td{padding:9px 10px;border-bottom:1px solid var(--line);color:var(--ink-2)}
+table tbody tr:hover{background:#fafbfd}
+table tbody tr:last-child td{border-bottom:none}
+.tbl-wrap{overflow:auto;border-radius:8px;border:1px solid var(--line)}
+
+/* ===== BADGES & DOTS ===== */
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700}
+.badge.green{background:#E4F7EE;color:#16744D}
+.badge.amber{background:#FDF1DE;color:#A06A1A}
+.badge.red{background:#FCE4E4;color:#9B2424}
+.badge.grey{background:#EEF1F6;color:#506379}
+.badge.navy{background:var(--navy);color:#fff} .badge.gold{background:var(--gold);color:var(--navy)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-inline-end:6px;vertical-align:middle}
+.dot.green{background:var(--green)} .dot.amber{background:var(--amber)}
+.dot.red{background:var(--red)}     .dot.grey{background:var(--grey)}
+
+/* ===== PIPELINE ===== */
+.funnel{display:flex;flex-direction:column;gap:6px;padding:8px 0}
+.funnel-stage{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:10px 14px;
+  border-radius:8px;background:linear-gradient(90deg,#f6f8fc,#fff);border-right:4px solid var(--gold);transition:.2s}
+.funnel-stage:hover{transform:translateX(-3px)}
+.funnel-stage .name{font-weight:700;color:var(--navy);font-size:13px}
+.funnel-stage .name small{display:block;color:var(--muted);font-weight:500;font-size:11px;margin-top:2px}
+.funnel-stage .cnt{font-weight:900;font-size:18px;color:var(--navy);min-width:50px;text-align:center}
+.funnel-stage.empty{opacity:.55}
+
+/* ===== COMPANY CARDS ===== */
+.comp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.comp-card{background:var(--card);border-radius:10px;padding:12px;box-shadow:var(--shadow);
+  border-top:3px solid var(--grey);position:relative}
+.comp-card.received{border-top-color:var(--amber)} .comp-card.approved{border-top-color:var(--green)}
+.comp-card h4{margin:0 0 6px;font-size:13px;color:var(--navy);font-weight:800;line-height:1.3;min-height:34px}
+.comp-card .biz{font-size:11px;color:var(--muted);margin-bottom:8px}
+.comp-card .rep{font-size:11.5px;color:var(--ink-2)} .comp-card .rep b{color:var(--navy)}
+.comp-card .pct-box{margin-top:10px}
+.comp-card .pct-num{font-weight:800;color:var(--navy);font-size:13px}
+.comp-card .note{font-size:11px;color:var(--muted);margin-top:6px;font-style:italic;min-height:14px}
+
+/* ===== PAYMENT ===== */
+.pay-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:6px}
+.pay-card{background:var(--card);border-radius:12px;padding:14px;box-shadow:var(--shadow);
+  border-inline-start:5px solid var(--grey);position:relative}
+.pay-card.paid{border-inline-start-color:var(--green)} .pay-card.due{border-inline-start-color:var(--amber)}
+.pay-card .num{position:absolute;top:10px;left:14px;color:var(--gold-3);font-weight:900;font-size:13px;font-family:'Inter'}
+.pay-card .ttl{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:4px}
+.pay-card .pct{font-size:11px;color:var(--muted);margin-bottom:8px}
+.pay-card .amt{font-size:20px;font-weight:900;color:var(--navy);margin:6px 0}
+.pay-card .amt small{font-size:12px;color:var(--muted);font-weight:600}
+.pay-card .cond{font-size:11px;color:var(--ink-2);margin-bottom:8px;min-height:32px}
+.pay-card .status{display:inline-block;font-size:11px;padding:3px 10px;border-radius:999px;font-weight:700}
+
+/* ===== WORKSHOPS ===== */
+.ws-entity{margin-bottom:14px;padding-bottom:12px;border-bottom:1px dashed var(--line)}
+.ws-entity:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.ws-entity .ent-title{font-weight:800;color:var(--navy);font-size:13px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.ws-entity .ent-title .cnt{background:var(--gold);color:var(--navy);font-weight:800;font-size:11px;padding:2px 8px;border-radius:999px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:#E4F7EE;color:#16744D;font-size:11.5px;padding:5px 10px;border-radius:6px;font-weight:600}
+.chip.pending{background:#FDF1DE;color:#A06A1A}
+
+/* ===== ACTIVITY & OBS ===== */
+.act-item{padding:10px 12px;border-radius:8px;background:#fafbfd;margin-bottom:8px;border-inline-start:3px solid var(--green)}
+.act-item.planned{border-inline-start-color:var(--gold)}
+.act-item .at{display:flex;justify-content:space-between;align-items:start;gap:10px}
+.act-item .desc{font-weight:600;color:var(--ink);font-size:12.5px;flex:1}
+.act-item .meta{font-size:11px;color:var(--muted);margin-top:4px}
+.obs-item{padding:12px 14px;background:#fffaf0;border:1px solid #f5e6c4;border-radius:10px;margin-bottom:8px}
+.obs-item .obs-t{font-weight:800;color:var(--navy);font-size:12.5px;margin-bottom:6px}
+.obs-item .grid-2{grid-template-columns:1fr 1fr;gap:10px}
+.obs-item .lbl{font-size:11px;color:var(--gold-3);font-weight:700;margin-bottom:3px}
+.obs-item .val{font-size:11.5px;color:var(--ink-2)}
+
+/* ===== RISKS ===== */
+.risk-card{padding:12px 14px;border-radius:10px;background:#fff;border-inline-start:5px solid var(--amber);
+  box-shadow:0 1px 4px rgba(10,37,64,.04);margin-bottom:8px}
+.risk-card.high{border-inline-start-color:var(--red);background:#fef9f9}
+.risk-card.medium{border-inline-start-color:var(--amber);background:#fffaf0}
+.risk-card .rt{display:flex;justify-content:space-between;align-items:start;gap:8px;margin-bottom:6px}
+.risk-card .desc{font-weight:700;color:var(--navy);font-size:13px}
+.risk-card .meta{font-size:11.5px;color:var(--ink-2);margin-top:4px}
+
+/* ===== LOADING / ERROR ===== */
+.loader{position:fixed;inset:0;background:rgba(10,37,64,.85);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;z-index:9999;color:#fff;backdrop-filter:blur(6px)}
+.loader.hidden{display:none}
+.spinner{width:54px;height:54px;border:4px solid rgba(201,169,97,.25);border-top-color:var(--gold);
+  border-radius:50%;animation:spin 1s linear infinite;margin-bottom:14px}
+.loader .msg{font-size:14px;font-weight:600;color:#fff}
+.loader .sub{font-size:11.5px;color:var(--gold-2);margin-top:4px}
+.toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);background:var(--red);color:#fff;
+  padding:10px 18px;border-radius:999px;font-size:12.5px;font-weight:700;z-index:9998;box-shadow:0 6px 22px rgba(224,72,72,.4);display:none}
+.toast.show{display:block}
+.toast.success{background:var(--green);box-shadow:0 6px 22px rgba(34,160,107,.4)}
+
+/* ===== FOOTER ===== */
+.footer{margin-top:24px;text-align:center;color:var(--muted);font-size:12px;padding:14px}
+.footer b{color:var(--navy)}
+
+@media (max-width:1100px){
+  .kpi-grid{grid-template-columns:repeat(3,1fr)}
+  .comp-grid{grid-template-columns:repeat(2,1fr)}
+  .pay-grid{grid-template-columns:repeat(2,1fr)}
+  .grid-1-2,.grid-2-1{grid-template-columns:1fr}
+  .grid-2,.grid-3{grid-template-columns:1fr}
+  .gantt-header,.gantt-row{grid-template-columns:200px 1fr}
+}
+@media print{ body{background:#fff} .tabs,.refresh-btn,.loader,.toast{display:none}
+  .page{display:block !important;page-break-after:always} }
 </style>
 </head>
 <body>
 
-<div id="loading"><div class="spinner"></div><div>جارٍ تحميل بيانات المشروع…</div></div>
-<div id="error-msg"></div>
-
-<div id="dashboard">
-
-<div class="header">
-  <div>
-    <h1>📊 لوحة متابعة مشروع تنفيذ Odoo Enterprise 19</h1>
-    <div class="meta" id="headerMeta">جارٍ التحميل…</div>
-  </div>
-  <div class="header-right">
-    <div class="badge" id="reportDate">📅 —</div>
-    <div class="live-stamp" id="liveStamp">—</div>
-  </div>
+<!-- =================== LOADER =================== -->
+<div class="loader" id="loader">
+  <div class="spinner"></div>
+  <div class="msg">جاري تحميل البيانات من Google Sheets…</div>
+  <div class="sub">Loading data from Apps Script Web App</div>
 </div>
 
-<div class="kpis">
-  <div class="kpi"><div class="label">نسبة الإنجاز الإجمالية</div><div class="value" id="kpiOverall">—</div><div class="sub">موزونة بمدة كل مرحلة</div></div>
-  <div class="kpi green"><div class="label">ورش العمل المكتملة</div><div class="value" id="kpiWorkshops">—</div><div class="sub" id="kpiWorkshopsSub">—</div></div>
-  <div class="kpi amber"><div class="label">BRD مستلمة</div><div class="value" id="kpiBrdRecv">—</div><div class="sub" id="kpiBrdRecvSub">—</div></div>
-  <div class="kpi amber"><div class="label">متوسط اكتمال BRD</div><div class="value" id="kpiBrdAvg">—</div><div class="sub" id="kpiBrdAvgSub">—</div></div>
-  <div class="kpi green"><div class="label">المدفوع</div><div class="value" id="kpiPaid">—</div><div class="sub" id="kpiPaidSub">—</div></div>
-  <div class="kpi red"><div class="label">المخاطر النشطة</div><div class="value" id="kpiRisks">—</div><div class="sub" id="kpiRisksSub">—</div></div>
-</div>
+<!-- =================== TOAST =================== -->
+<div class="toast" id="toast"></div>
 
-<div class="section-title">🔄 خط أنابيب وثائق متطلبات الأعمال (BRD Pipeline)</div>
-<div class="grid grid-12">
-  <div class="card">
-    <h3><span>📊</span> توزيع الشركات على مراحل BRD</h3>
-    <div class="funnel">
-      <div class="funnel-stage s1"><div class="num">1</div><div class="label">لم تستلم</div><div class="count" id="pipS1">—</div></div>
-      <div class="funnel-stage s2"><div class="num">2</div><div class="label">قيد المراجعة الداخلية (PMO)</div><div class="count" id="pipS2">—</div></div>
-      <div class="funnel-stage s3"><div class="num">3</div><div class="label">جاهزة للإرسال لكيان</div><div class="count" id="pipS3">—</div></div>
-      <div class="funnel-stage s4"><div class="num">4</div><div class="label">قيد مراجعة كيان</div><div class="count" id="pipS4">—</div></div>
-      <div class="funnel-stage s5"><div class="num">5</div><div class="label">معتمدة (جاهزة للتنفيذ)</div><div class="count" id="pipS5">—</div></div>
+<div class="wrap">
+
+  <!-- ========== HEADER ========== -->
+  <div class="topbar">
+    <div class="topbar-grid">
+      <div>
+        <div class="brand">
+          <div class="logo-mark">M</div>
+          <h1>
+            لوحة متابعة مشروع Odoo Enterprise 19
+            <small class="en">Odoo 19 Implementation Project Dashboard • <span id="proj-quote">S00239</span></small>
+          </h1>
+        </div>
+        <div class="proj-meta" id="proj-meta">
+          <!-- filled at runtime -->
+        </div>
+      </div>
+      <div>
+        <div class="tag-row">
+          <span class="tag live" id="tag-phase-status">● مرحلة قيد التنفيذ</span>
+          <span class="tag gold" id="tag-current-phase">GAP Analysis</span>
+          <span class="tag" id="tag-version">Version 1.0</span>
+        </div>
+        <div class="updated">
+          <span id="updated-label">Last update: <b style="color:#fff" id="last-update">—</b></span>
+          &nbsp;|&nbsp;
+          <span>Fetched: <b style="color:#fff" id="last-fetch">—</b></span>
+        </div>
+        <button class="refresh-btn" id="refreshBtn" title="إعادة جلب البيانات من Google Sheets">
+          <span id="refresh-ico">🔄</span> تحديث البيانات
+        </button>
+      </div>
     </div>
-    <div class="funnel-note">💡 تتقدم كل شركة عبر هذه المراحل من اليمين إلى اليسار حتى الاعتماد النهائي.</div>
   </div>
-  <div>
+
+  <!-- ========== TABS ========== -->
+  <nav class="tabs" id="tabs">
+    <button data-tab="exec" class="active">📊 نظرة تنفيذية <span class="en-sub">Executive</span></button>
+    <button data-tab="phases">📅 المراحل والجدول الزمني <span class="en-sub">Phases & Timeline</span></button>
+    <button data-tab="brd">📋 متابعة BRD <span class="en-sub">BRD Tracking</span></button>
+    <button data-tab="ops">💼 المالية والعمليات <span class="en-sub">Financial & Operations</span></button>
+  </nav>
+
+  <!-- ========== PAGE 1: EXECUTIVE ========== -->
+  <section class="page active" id="page-exec">
+    <div class="kpi-grid" id="kpiGrid"></div>
+
+    <div class="grid-3" style="margin-top:14px">
+      <div class="card">
+        <h3>التقدم الإجمالي للمشروع <span class="en">Overall Project Progress</span></h3>
+        <div class="gauge-wrap">
+          <canvas id="gaugeOverall" width="280" height="200"></canvas>
+          <div class="gauge-value">
+            <div class="big" id="gaugeBig">—</div>
+            <div class="lbl">من خطة الـ110 يوم عمل</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>حالة المراحل (RAG) <span class="en">Phase RAG Status</span></h3>
+        <div style="height:200px"><canvas id="ragDonut"></canvas></div>
+      </div>
+      <div class="card" style="background:linear-gradient(135deg,#fffbf0 0%,#fff 100%);border:1px solid #f4e6c2" id="currentPhaseCard">
+        <!-- filled at runtime -->
+      </div>
+    </div>
+
+    <div class="grid-2-1" style="margin-top:14px">
+      <div class="card">
+        <h3>تقدم المراحل الخمس <span class="en">Five Phases Progress</span></h3>
+        <div id="phaseBars"></div>
+      </div>
+      <div class="card">
+        <h3>قمع BRD <span class="en">BRD Pipeline</span></h3>
+        <div class="funnel" id="pipelineMini"></div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-top:14px" id="contractRow">
+      <!-- filled at runtime -->
+    </div>
+  </section>
+
+  <!-- ========== PAGE 2: PHASES ========== -->
+  <section class="page" id="page-phases">
     <div class="card">
-      <h3><span>🎯</span> مؤشرات Pipeline</h3>
-      <table class="summary">
-        <tr><td>الشركات التي استلمت BRD</td><td id="pipRecv">—</td></tr>
-        <tr><td>الشركات التي لم تستلم</td><td id="pipNotRecv" style="color:var(--danger)">—</td></tr>
-        <tr><td>متوسط اكتمال الإجمالي</td><td id="pipAvgAll">—</td></tr>
-        <tr><td>متوسط للمستلمة فقط</td><td id="pipAvgRecv" style="color:var(--success)">—</td></tr>
-        <tr><td>نسبة التقدم في الـ Pipeline</td><td id="pipProgress">—</td></tr>
-      </table>
+      <h3>الجدول الزمني للمراحل <span class="en">Project Phases Timeline (Gantt)</span> <span class="pill">5 مراحل</span></h3>
+      <div class="gantt-header">
+        <div>المرحلة / Phase</div>
+        <div id="ganttScale"></div>
+      </div>
+      <div class="gantt" id="ganttBody"></div>
+      <div style="margin-top:14px;display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--muted)">
+        <span><span class="dot green"></span>مكتملة</span>
+        <span><span class="dot amber"></span>قيد التنفيذ</span>
+        <span><span class="dot red"></span>متأخرة</span>
+        <span><span class="dot grey"></span>لم تبدأ</span>
+        <span>🟡 خط ذهبي = اليوم</span>
+      </div>
     </div>
-    <div class="card" style="margin-top:16px">
-      <h3><span>📈</span> Pipeline بصري</h3>
-      <div class="chart-container"><canvas id="brdChart"></canvas></div>
+
+    <div class="section-title">تفاصيل المراحل <span class="en">Phase Details</span></div>
+    <div class="card" style="padding:6px">
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>المرحلة</th><th>المسؤول</th><th>البداية</th><th>النهاية المخطط</th>
+              <th>المدة</th><th>الإنجاز</th><th>الحالة</th><th>RAG</th>
+              <th>القيمة (ر.س)</th><th>المسدد</th><th>المتبقي</th><th>ملاحظات</th></tr>
+          </thead>
+          <tbody id="phaseTable"></tbody>
+        </table>
+      </div>
     </div>
-  </div>
-</div>
 
-<div class="card">
-  <h3><span>🏢</span> حالة BRD لكل شركة تابعة</h3>
-  <div class="companies" id="companiesGrid"></div>
-</div>
-
-<div class="section-title">📌 الأنشطة (الإنجاز والتخطيط)</div>
-<div class="grid grid-2">
-  <div class="card"><h3><span>✅</span> الأنشطة المنجزة</h3><ul class="activity-list" id="doneList"></ul></div>
-  <div class="card"><h3><span>📅</span> الأنشطة المخططة للفترة القادمة</h3><ul class="activity-list" id="plannedList"></ul></div>
-</div>
-
-<div class="section-title">⚙️ تنفيذ المشروع</div>
-<div class="grid grid-3">
-  <div class="card">
-    <h3><span>📌</span> مراحل المشروع</h3>
-    <div class="phase-row" style="font-weight:600;color:#888;font-size:11px;padding:6px 0">
-      <div>#</div><div>المرحلة</div><div style="text-align:center">الحالة</div><div style="text-align:center">التقدم</div><div style="text-align:center">RAG</div>
+    <div class="grid-2" style="margin-top:14px">
+      <div class="card">
+        <h3>القيمة التعاقدية للمراحل <span class="en">Phase Contract Value</span></h3>
+        <div style="height:240px"><canvas id="phaseValueChart"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>الإنجاز مقابل الخطة <span class="en">Progress vs Plan</span></h3>
+        <div style="height:240px"><canvas id="phaseProgressChart"></canvas></div>
+      </div>
     </div>
-    <div id="phasesList"></div>
-  </div>
-  <div class="card">
-    <h3><span>💰</span> الملخص المالي</h3>
-    <table class="summary">
-      <tr><td>قيمة العقد قبل الضريبة</td><td id="finContract">—</td></tr>
-      <tr><td>ضريبة 15%</td><td id="finVat">—</td></tr>
-      <tr><td>الإجمالي</td><td id="finTotal">—</td></tr>
-      <tr><td>المدفوع</td><td id="finPaid" style="color:var(--success)">—</td></tr>
-      <tr><td>المتبقي</td><td id="finRemaining" style="color:var(--danger)">—</td></tr>
-      <tr><td>نسبة السداد</td><td id="finPct">—</td></tr>
-    </table>
-  </div>
-</div>
+  </section>
 
-<div class="card">
-  <h3><span>⚠️</span> المخاطر النشطة</h3>
-  <table class="summary" style="font-size:12.5px">
-    <thead><tr style="font-weight:bold;background:#f9fafc;color:var(--primary)">
-      <td>المخاطرة</td><td style="text-align:center;width:90px">التأثير</td>
-      <td style="text-align:center;width:110px">الحالة</td><td style="width:35%">إجراء التخفيف</td>
-    </tr></thead>
-    <tbody id="risksBody"></tbody>
-  </table>
-</div>
+  <!-- ========== PAGE 3: BRD ========== -->
+  <section class="page" id="page-brd">
+    <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr)" id="brdKpis"></div>
 
-<div class="footer">مصدر البيانات: Google Sheets · يتجدد تلقائياً كل 5 دقائق · صلاحية قراءة فقط للإدارة العليا</div>
+    <div class="grid-1-2" style="margin-top:14px">
+      <div class="card">
+        <h3>خط أنابيب BRD <span class="en">BRD Pipeline Funnel</span></h3>
+        <div class="funnel" id="pipelineFull"></div>
+        <div style="margin-top:14px;padding:10px;background:#fafbfd;border-radius:8px;font-size:11.5px;color:var(--muted);line-height:1.7">
+          <b style="color:var(--navy)">المسار:</b> لم تستلم ← قيد المراجعة الداخلية ← جاهزة للإرسال ← قيد مراجعة كيان ← معتمدة
+        </div>
+      </div>
+      <div class="card">
+        <h3>توزيع BRD حسب الحالة <span class="en">BRD Status Distribution</span></h3>
+        <div style="height:280px"><canvas id="brdChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="section-title">حالة الشركات الثمانية <span class="en">8 Subsidiaries Status</span></div>
+    <div class="comp-grid" id="compCards"></div>
+  </section>
+
+  <!-- ========== PAGE 4: OPS ========== -->
+  <section class="page" id="page-ops">
+    <div class="grid-2-1">
+      <div class="card">
+        <h3>جدول الدفعات التعاقدية <span class="en">Contractual Payment Schedule</span>
+          <span class="pill" id="paidPctPill">— مدفوع</span></h3>
+        <div class="pay-grid" id="payGrid"></div>
+      </div>
+      <div class="card">
+        <h3>توزيع الدفعات <span class="en">Payment Split</span></h3>
+        <div style="height:200px;margin-bottom:12px"><canvas id="payChart"></canvas></div>
+        <div id="paySummary"></div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top:14px">
+      <div class="card">
+        <h3>سجل المخاطر والمعوقات <span class="en">Risk Register</span>
+          <span class="pill" id="riskCountPill" style="background:#fce4e4;color:var(--red)">— نشطة</span></h3>
+        <div id="risksList"></div>
+      </div>
+      <div class="card">
+        <h3>ملاحظات الورش الجوهرية <span class="en">Key Observations</span></h3>
+        <div id="obsList"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h3>ورش العمل المنعقدة حسب الكيان <span class="en">Workshops by Entity</span>
+        <span class="pill" id="wsCountPill">— ورشة</span></h3>
+      <div id="workshopsByEntity"></div>
+    </div>
+
+    <div class="grid-2" style="margin-top:14px">
+      <div class="card">
+        <h3>الأنشطة المنجزة <span class="en">Completed Activities</span>
+          <span class="pill" id="doneCountPill" style="background:#e4f7ee;color:var(--green)">— أنشطة</span></h3>
+        <div id="doneList"></div>
+      </div>
+      <div class="card">
+        <h3>الأنشطة المخططة <span class="en">Planned Activities</span>
+          <span class="pill" id="plannedCountPill" style="background:#fdf1de;color:var(--amber)">— أنشطة</span></h3>
+        <div id="plannedList"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer">
+    <b>لوحة متابعة Odoo Enterprise 19</b> • شركة خير ميثاق القابضة •
+    البيانات تُجلب مباشرة من Google Sheets عبر Apps Script
+    <br><span class="en">Confidential • For Senior Management Review Only • Powered by Apps Script + GitHub Pages</span>
+  </div>
 </div>
 
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbxzbTlJFGfMzUeBI6DRX6DUdEJQvbe88uNDIQX4Hkqpw0RqoFhrSw2Z-2fiemlg1A-i/exec';
-const REFRESH_MS = 5 * 60 * 1000;
-let brdChartInstance = null;
+/* ════════════════════════════════════════════════════════
+   CONFIG - !!! PASTE YOUR WEB APP URL BELOW !!!
+   ════════════════════════════════════════════════════════ */
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxzbTlJFGfMzUeBI6DRX6DUdEJQvbe88uNDIQX4Hkqpw0RqoFhrSw2Z-2fiemlg1A-i/exec";
+const STORAGE_KEY = "mithaquna_odoo19_cache";
 
-const fmtNum = (n,d=0) => (n==null||isNaN(n)) ? '—' : Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
-const fmtPct = (n,d=1) => (n==null||isNaN(n)) ? '—' : (Number(n)*100).toFixed(d)+'%';
+/* ════════════════════════════════════════════════════════
+   HELPERS
+   ════════════════════════════════════════════════════════ */
+const $ = (id) => document.getElementById(id);
+const isStr = v => typeof v === 'string';
+const isNum = v => typeof v === 'number' && isFinite(v);
+const trim = v => isStr(v) ? v.trim() : v;
+const isEmpty = v => v === null || v === undefined || (isStr(v) && v.trim() === '');
+
+function fmtNum(n){ return Number(n||0).toLocaleString('en-US'); }
 function fmtDate(v){
   if(!v) return '—';
-  const d=new Date(v);
-  if(isNaN(d)) return String(v).split('T')[0];
-  const m=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-  return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()}`;
-}
-function findVal(rows,key){ for(const r of rows) for(let i=0;i<r.length-1;i++) if(String(r[i]).trim()===key) return r[i+1]; return null; }
-function ragCls(v){ v=String(v||''); if(v.includes('🟢'))return 'g'; if(v.includes('🟡'))return 'a'; if(v.includes('🔴'))return 'r'; return 'w'; }
-function ragSym(v){ return{g:'✓',a:'!',r:'×',w:'·'}[ragCls(v)]; }
-function statusCls(s){ s=String(s||''); if(s.includes('مكتمل')||s.toLowerCase().includes('paid'))return 'done'; if(s.includes('قيد'))return 'prog'; if(s.includes('متأخر'))return 'late'; return 'wait'; }
-
-function parse(raw){
-  const d={};
-  const info=raw.info||[];
-  d.client=findVal(info,'العميل'); d.executor=findVal(info,'المنفذ'); d.ref=findVal(info,'رقم العرض');
-  d.duration=findVal(info,'إجمالي مدة المشروع'); d.subCount=findVal(info,'عدد الشركات المشمولة');
-  d.currentPhase=findVal(info,'المرحلة الحالية'); d.reportDate=findVal(info,'تاريخ التقرير الحالي');
-  d.reportVer=findVal(info,'إصدار التقرير'); d.lastUpdate=findVal(info,'آخر تحديث للوحة');
-  d.preVat=Number(findVal(info,'قيمة العقد قبل الضريبة (ر.س)'))||0;
-  d.vatAmt=Number(findVal(info,'ضريبة القيمة المضافة 15%'))||0;
-  d.totalContract=Number(findVal(info,'إجمالي العقد شامل الضريبة'))||0;
-
-  d.phases=[];
-  (raw.phases||[]).slice(1).forEach(r=>{ if(!r[0]||isNaN(Number(r[0])))return; d.phases.push({id:r[0],name:r[1],owner:r[2],dur:Number(r[6])||0,pct:Number(r[7])||0,status:r[8],rag:r[9]}); });
-
-  d.companies=[];
-  (raw.companies||[]).slice(3).forEach(r=>{ if(!r[0]||isNaN(Number(r[0])))return; d.companies.push({name:r[1],biz:r[2],rep:r[3],recvDate:r[4],internal:r[5],ext:r[7],pct:Number(r[9])||0,notes:r[10]}); });
-
-  d.pipeline={s1:0,s2:0,s3:0,s4:0,s5:0};
-  (raw.pipeline||[]).forEach((r,i)=>{ if(i>=4&&i<=8) d.pipeline['s'+(i-3)]=Number(r[3])||0; });
-  if(!d.pipeline.s1&&!d.pipeline.s2) d.companies.forEach(c=>{ const s=String(c.internal||''); if(s.includes('في الانتظار'))d.pipeline.s1++; else if(s.includes('قيد المراجعة'))d.pipeline.s2++; else if(s.includes('جاهزة'))d.pipeline.s3++; });
-
-  d.payments=[];
-  (raw.payments||[]).slice(3).forEach(r=>{ if(!r[0]||isNaN(Number(r[0])))return; d.payments.push({name:r[1],pct:r[2],amount:Number(r[6])||0,status:r[7]}); });
-
-  d.risks=[];
-  (raw.risks||[]).slice(3).forEach(r=>{ if(!r[0]||isNaN(Number(r[0]))||!String(r[1]||'').trim())return; d.risks.push({desc:r[1],impact:r[2],priority:r[3],owner:r[4],plan:r[5],status:r[6]}); });
-
-  d.workshops=[];
-  (raw.workshops||[]).slice(3).forEach(r=>{ if(!r[0]||isNaN(Number(r[0])))return; d.workshops.push({entity:r[1],dept:r[2],status:r[3]}); });
-
-  d.planned=[];
-  (raw.planned||[]).slice(3).forEach(r=>{ if(!r[0]||isNaN(Number(r[0])))return; d.planned.push({activity:r[1],owner:r[2],due:r[3],status:r[4]}); });
-
-  let totalDur=0,weighted=0;
-  d.phases.forEach(p=>{ totalDur+=p.dur; weighted+=p.dur*p.pct; });
-  d.overallProgress=totalDur>0?weighted/totalDur:0;
-
-  d.brdReceived=d.companies.filter(c=>c.recvDate).length;
-  d.brdNotReceived=d.companies.length-d.brdReceived;
-  const pcts=d.companies.map(c=>c.pct);
-  d.brdAvgAll=pcts.length?pcts.reduce((a,b)=>a+b,0)/pcts.length:0;
-  const rp=pcts.filter(p=>p>0); d.brdAvgRecv=rp.length?rp.reduce((a,b)=>a+b,0)/rp.length:0;
-  const t=d.pipeline.s1+d.pipeline.s2+d.pipeline.s3+d.pipeline.s4+d.pipeline.s5;
-  d.pipelineProgress=t>0?(d.pipeline.s2*1+d.pipeline.s3*2+d.pipeline.s4*3+d.pipeline.s5*4)/(t*4):0;
-  d.workshopsDone=d.workshops.filter(w=>String(w.status||'').includes('مكتملة')).length;
-  d.totalPaid=d.payments.filter(p=>String(p.status||'').toLowerCase().includes('paid')&&!String(p.status||'').toLowerCase().includes("didn't")).reduce((s,p)=>s+p.amount,0);
-  d.totalContractAmt=d.payments.reduce((s,p)=>s+p.amount,0);
-  d.pendingPay=d.totalContractAmt-d.totalPaid; d.payRatio=d.totalContractAmt>0?d.totalPaid/d.totalContractAmt:0;
-  d.activeRisks=d.risks.filter(r=>String(r.status||'').includes('نشط')).length;
-  d.highPriorityRisks=d.risks.filter(r=>String(r.priority||'').includes('عالية')&&String(r.status||'').includes('نشط')).length;
-  return d;
+  if(v instanceof Date) return v.toISOString().substring(0,10);
+  if(isStr(v)){
+    const s = v.trim();
+    // ISO: 2026-04-01
+    if(s.match(/^\d{4}-\d{2}-\d{2}/)) return s.substring(0,10);
+    // DD/MM/YYYY or DD-MM-YYYY (Arabic context — always DMY)
+    const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+    if(m){
+      const d = parseInt(m[1]), mo = parseInt(m[2]), y = parseInt(m[3]);
+      if(d<=31 && mo<=12){
+        return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      }
+    }
+  }
+  try{ const d=new Date(v); if(!isNaN(d.getTime())) return d.toISOString().substring(0,10); }catch(e){}
+  return String(v);
 }
 
-function render(d){
-  document.getElementById('headerMeta').innerHTML=`${d.client||'—'} · المنفذ: ${d.executor||'—'} · ${d.ref||'—'} · ${d.subCount||8} شركات تابعة · ${d.duration||'—'}<br>المرحلة الحالية: <strong>${d.currentPhase||'—'}</strong>`;
-  document.getElementById('reportDate').textContent='📅 تقرير '+fmtDate(d.reportDate||d.lastUpdate)+' · '+(d.reportVer||'v1.0');
-  const now=new Date();
-  document.getElementById('liveStamp').textContent='آخر جلب: '+now.toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'})+' · '+now.toLocaleDateString('ar-SA',{day:'numeric',month:'short'});
+/* Derive RAG from actual project state, not the Excel emoji (which may be stale) */
+function deriveRag(status, pct){
+  const s = String(status||'').trim();
+  const p = pctNum(pct);
+  if(p >= 100 || s.includes('مكتمل')) return 'green';
+  if(s.includes('قيد التنفيذ') || s.includes('جاري') || (p > 0 && p < 100)) return 'amber';
+  if(s.includes('متأخر') || s.includes('delayed')) return 'red';
+  return 'grey'; // لم تبدأ / not started / unknown
+}
 
-  document.getElementById('kpiOverall').textContent=fmtPct(d.overallProgress);
-  document.getElementById('kpiWorkshops').innerHTML=d.workshopsDone+`<span style="font-size:13px;color:#999"> / ${d.workshops.length||d.companies.length}</span>`;
-  document.getElementById('kpiWorkshopsSub').textContent=fmtPct(d.workshopsDone/Math.max(d.companies.length,1))+' من الكيانات';
-  document.getElementById('kpiBrdRecv').innerHTML=d.brdReceived+`<span style="font-size:13px;color:#999"> / ${d.companies.length}</span>`;
-  document.getElementById('kpiBrdRecvSub').textContent=d.companies.filter(c=>c.recvDate).map(c=>String(c.name).replace(/شركة\s+/g,'').split(' ')[0]).join(' + ')||'لا يوجد';
-  document.getElementById('kpiBrdAvg').textContent=fmtPct(d.brdAvgAll);
-  document.getElementById('kpiBrdAvgSub').textContent=fmtPct(d.brdAvgRecv)+' للمستلمة فقط';
-  document.getElementById('kpiPaid').textContent=fmtNum(d.totalPaid);
-  document.getElementById('kpiPaidSub').textContent='من '+fmtNum(d.totalContractAmt)+' ('+fmtPct(d.payRatio)+')';
-  document.getElementById('kpiRisks').textContent=d.activeRisks;
-  document.getElementById('kpiRisksSub').textContent='منها '+d.highPriorityRisks+' عالية الأولوية';
+/* Fix end dates that ended up before start dates (Excel MDY/DMY parsing bug).
+   If end < start, try swapping the day/month components of the ISO date. */
+function sanitizeEnd(start, end, days){
+  const ps = new Date(start).getTime();
+  const pe = new Date(end).getTime();
+  if(isNaN(ps) || isNaN(pe)) return end;
+  if(pe >= ps) return end;
+  // Swap month <-> day in ISO YYYY-MM-DD
+  const m = String(end).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m){
+    const swapped = `${m[1]}-${m[3]}-${m[2]}`;
+    const ts = new Date(swapped).getTime();
+    if(!isNaN(ts) && ts >= ps) return swapped;
+  }
+  // Last resort: start + days
+  const dur = (Number(days)||7) * 24*3600*1000;
+  return new Date(ps + dur).toISOString().substring(0,10);
+}
+function pctNum(v){
+  if(isNum(v)){
+    return v <= 1 ? v*100 : v;
+  }
+  if(isStr(v)){
+    const cleaned = v.replace('%','').trim();
+    const f = parseFloat(cleaned);
+    if(isFinite(f)) return f <= 1 ? f*100 : f;
+  }
+  return 0;
+}
+function ragFromIcon(icon){
+  if(!icon) return 'grey';
+  const s = String(icon);
+  if(s.includes('🟢')||s.includes('أخضر')) return 'green';
+  if(s.includes('🟡')||s.includes('أصفر')) return 'amber';
+  if(s.includes('🔴')||s.includes('أحمر')) return 'red';
+  if(s.includes('⚪')||s.includes('أبيض')) return 'grey';
+  return 'grey';
+}
+function ragDot(r){return `<span class="dot ${r}"></span>`}
+function showToast(msg, ok){
+  const t = $('toast'); t.textContent = msg;
+  t.classList.toggle('success', !!ok); t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3500);
+}
 
-  ['s1','s2','s3','s4','s5'].forEach(k=>document.getElementById('pip'+k[0].toUpperCase()+k[1]).textContent=d.pipeline[k]);
-  document.getElementById('pipRecv').textContent=d.brdReceived+' / '+d.companies.length;
-  document.getElementById('pipNotRecv').textContent=d.brdNotReceived+' / '+d.companies.length;
-  document.getElementById('pipAvgAll').textContent=fmtPct(d.brdAvgAll);
-  document.getElementById('pipAvgRecv').textContent=fmtPct(d.brdAvgRecv);
-  document.getElementById('pipProgress').textContent=fmtPct(d.pipelineProgress);
+/* ════════════════════════════════════════════════════════
+   PARSERS — convert 2D arrays into structured objects
+   ════════════════════════════════════════════════════════ */
+function parseInfoSheet(rows){
+  // (None,'key','value',None) — key in col B, value in col C
+  const map = {};
+  rows.forEach(r=>{
+    if(r.length>=3 && !isEmpty(r[1]) && !isEmpty(r[2])){
+      map[String(r[1]).trim()] = r[2];
+    }
+  });
+  return map;
+}
+function parseSummary(rows){
+  // Summary sheet has two columns of key-value pairs
+  const map = {};
+  rows.forEach(r=>{
+    // Col B/C pair
+    if(r.length>=3 && !isEmpty(r[1]) && !isEmpty(r[2]) && !String(r[1]).startsWith('──')){
+      map[String(r[1]).trim()] = r[2];
+    }
+  });
+  return map;
+}
+function parsePhases(rows){
+  // Row 0 = headers; rows 1..n = data
+  if(rows.length<2) return [];
+  const out = [];
+  for(let i=1;i<rows.length;i++){
+    const r = rows[i];
+    if(isEmpty(r[0])) continue;
+    const start = fmtDate(r[3]);
+    let end = fmtDate(r[4]);
+    // Fix MDY/DMY broken end dates
+    end = sanitizeEnd(start, end, r[6]);
+    out.push({
+      n: r[0], name: r[1], owner: r[2],
+      start, end, actual: fmtDate(r[5]),
+      days: r[6], pct: pctNum(r[7]), status: r[8],
+      // Derive RAG from status + progress, ignoring (potentially stale) Excel emoji
+      rag: deriveRag(r[8], r[7]),
+      val: r[10]||0, paid: r[11]||0, rem: r[12]||0,
+      payPct: r[13], notes: r[14]||''
+    });
+  }
+  return out;
+}
+function parseCompanies(rows){
+  // Row 0 = title, Row 1 = headers, Row 2..9 = data
+  const out = [];
+  for(let i=2;i<rows.length;i++){
+    const r = rows[i];
+    if(isEmpty(r[0])||!isNum(r[0])) continue;
+    out.push({
+      n:r[0], name:r[1], biz:r[2], rep:r[3]||'-',
+      recv:fmtDate(r[4]), status:r[5]||'-',
+      sent:fmtDate(r[6]), kayan:r[7]||'-', approved:fmtDate(r[8]),
+      pct: pctNum(r[9]), note: r[10]||''
+    });
+  }
+  return out;
+}
+function parsePayments(rows){
+  const out = [];
+  for(let i=2;i<rows.length;i++){
+    const r = rows[i];
+    if(isEmpty(r[0])||!isNum(r[0])) continue;
+    out.push({
+      n:r[0], name:r[1], pct:r[2], cond:r[3],
+      due:fmtDate(r[4]), paidDate:fmtDate(r[5]),
+      amount:r[6]||0, status:r[7]||'-'
+    });
+  }
+  return out;
+}
+function parseRisks(rows){
+  const out = [];
+  for(let i=2;i<rows.length;i++){
+    const r = rows[i];
+    if(isEmpty(r[0])||!isNum(r[0])||isEmpty(r[1])) continue;
+    const priority = String(r[3]||'').trim();
+    out.push({
+      n:r[0], desc:r[1], impact:r[2], priority,
+      level: priority.includes('عالي') ? 'high' : 'medium',
+      owner:r[4], plan:r[5], status:r[6]
+    });
+  }
+  return out;
+}
+function parsePipeline(rows){
+  const out = [];
+  // Row 0,1,2 = titles; Row 3 = headers; Row 4..8 = stages
+  for(let i=4;i<rows.length;i++){
+    const r = rows[i];
+    if(r.length<5) continue;
+    if(isEmpty(r[1])||!isNum(r[1])) continue;
+    out.push({
+      n:r[1], stage:r[2], count:Number(r[3]||0),
+      pct: pctNum(r[4]), notes:r[6]||''
+    });
+  }
+  return out;
+}
+function parseWorkshops(rows){
+  // Row 0 title, Row 1 headers
+  const items = [];
+  for(let i=2;i<rows.length;i++){
+    const r = rows[i];
+    if(isEmpty(r[0])) continue;
+    items.push({
+      entity: String(r[1]||'').trim(),
+      dept: String(r[2]||'').trim(),
+      status: String(r[3]||'').trim(),
+      notes: r[5]||''
+    });
+  }
+  // Group by entity
+  const grouped = {};
+  items.forEach(w=>{
+    if(!grouped[w.entity]) grouped[w.entity] = {entity:w.entity, depts:[], status:'done'};
+    if(w.status.includes('لم')) grouped[w.entity].status = 'pending';
+    if(w.dept && w.dept!=='-') grouped[w.entity].depts.push(w.dept);
+    else if(grouped[w.entity].depts.length===0) grouped[w.entity].depts.push('بانتظار جدولة الورشة');
+  });
+  return Object.values(grouped).map(g=>({...g, count: g.depts.filter(d=>!d.includes('بانتظار')).length}));
+}
+function parseSimpleList(rows, dataStartRow=2){
+  // For done/observations/planned simple sheets
+  const out = [];
+  for(let i=dataStartRow;i<rows.length;i++){
+    const r = rows[i];
+    if(isEmpty(r[0])||!isNum(r[0])) continue;
+    out.push(r);
+  }
+  return out;
+}
 
-  if(brdChartInstance) brdChartInstance.destroy();
-  brdChartInstance=new Chart(document.getElementById('brdChart').getContext('2d'),{
-    type:'bar',
-    data:{labels:['لم تستلم','مراجعة داخلية','جاهزة لكيان','مراجعة كيان','معتمدة'],
-      datasets:[{label:'عدد الشركات',data:[d.pipeline.s1,d.pipeline.s2,d.pipeline.s3,d.pipeline.s4,d.pipeline.s5],
-      backgroundColor:['#C00000','#ED7D31','#FFC000','#4472C4','#70AD47'],borderRadius:6,borderSkipped:false}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{x:{beginAtZero:true,max:Math.max(d.companies.length,8),ticks:{stepSize:1,font:{family:'Tahoma',size:11}},grid:{color:'#eef2f7'}},
-              y:{ticks:{font:{family:'Tahoma',size:11},color:'#1a2b4a'},grid:{display:false}}}}
+/* ════════════════════════════════════════════════════════
+   FETCH
+   ════════════════════════════════════════════════════════ */
+let CHARTS = {};
+
+async function loadData(forceFetch=false){
+  const btn = $('refreshBtn');
+  const loader = $('loader');
+  btn.disabled = true;
+  $('refresh-ico').innerHTML = '<span class="spin">⏳</span>';
+
+  // Show full loader only on first load
+  if(forceFetch===false && !window._mountedOnce) loader.classList.remove('hidden');
+
+  let raw = null, fromCache = false;
+
+  try{
+    if(WEB_APP_URL && !WEB_APP_URL.startsWith('PASTE_')){
+      const res = await fetch(WEB_APP_URL, { method:'GET', cache:'no-store' });
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      raw = await res.json();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({raw, t: Date.now()}));
+      showToast('✓ تم تحديث البيانات من Google Sheets', true);
+    } else {
+      throw new Error('WEB_APP_URL not configured');
+    }
+  } catch(err) {
+    console.warn('Fetch failed:', err.message);
+    const cached = localStorage.getItem(STORAGE_KEY);
+    if(cached){
+      const parsed = JSON.parse(cached);
+      raw = parsed.raw; fromCache = true;
+      showToast('⚠ تعذّر الاتصال - عرض آخر نسخة محفوظة');
+    } else {
+      showToast('⚠ تعذّر الاتصال بـ Apps Script - تحقق من الرابط');
+      btn.disabled = false; $('refresh-ico').textContent='🔄';
+      loader.classList.add('hidden');
+      return;
+    }
+  }
+
+  // Parse
+  const data = {
+    info: parseInfoSheet(raw.info||[]),
+    summary: parseSummary(raw.summary||[]),
+    phases: parsePhases(raw.phases||[]),
+    companies: parseCompanies(raw.companies||[]),
+    payments: parsePayments(raw.payments||[]),
+    risks: parseRisks(raw.risks||[]),
+    pipeline: parsePipeline(raw.pipeline||[]),
+    workshops: parseWorkshops(raw.workshops||[]),
+    planned: parseSimpleList(raw.planned||[]),
+    done: parseSimpleList(raw.done||[]),
+    observations: parseSimpleList(raw.observations||[]),
+    checklist: raw.checklist || [],
+    _meta: raw._meta || {}
+  };
+
+  renderAll(data);
+  $('last-fetch').textContent = new Date().toLocaleString('en-GB',{hour12:false});
+  window._mountedOnce = true;
+  loader.classList.add('hidden');
+  btn.disabled = false; $('refresh-ico').textContent='🔄';
+}
+
+/* ════════════════════════════════════════════════════════
+   RENDER
+   ════════════════════════════════════════════════════════ */
+function renderAll(D){
+  renderHeader(D);
+  renderKPIs(D);
+  renderCurrentPhase(D);
+  renderPhaseBars(D);
+  renderPipeline('pipelineMini', D.pipeline);
+  renderPipeline('pipelineFull', D.pipeline);
+  renderContractRow(D);
+  renderPhasesTable(D);
+  renderGantt(D);
+  renderBRDKpis(D);
+  renderCompanies(D);
+  renderPayments(D);
+  renderRisks(D);
+  renderObservations(D);
+  renderWorkshops(D);
+  renderActivities(D);
+  renderCharts(D);
+}
+
+function renderHeader(D){
+  const i = D.info;
+  $('proj-quote').textContent = i['رقم العرض'] || 'S00239';
+  $('last-update').textContent = fmtDate(i['آخر تحديث للوحة'] || i['تاريخ التقرير الحالي']);
+  $('tag-version').textContent = i['إصدار التقرير'] || 'v1.0';
+  $('tag-current-phase').textContent = (i['المرحلة الحالية']||'').split('/')[0].trim() || 'GAP Analysis';
+
+  const meta = $('proj-meta'); meta.innerHTML = '';
+  const fields = [
+    ['العميل', 'Client', i['العميل']],
+    ['المنفذ', 'Vendor', i['المنفذ']],
+    ['مدير المشروع', 'PM', i['مدير المشروع (المنفذ)']],
+    ['مسؤول التواصل', 'Sponsor', i['مسؤول التواصل (العميل)']],
+    ['المدة', 'Duration', i['إجمالي مدة المشروع']]
+  ];
+  fields.forEach(([ar,en,val])=>{
+    if(val) meta.insertAdjacentHTML('beforeend',
+      `<div class="item">${ar} / <span class="en">${en}:</span> <b>${val}</b></div>`);
+  });
+}
+
+function renderKPIs(D){
+  const s = D.summary;
+  const overall = pctNum(s['نسبة الإنجاز الإجمالية للمشروع']);
+  const paymentPct = pctNum(s['نسبة السداد']);
+  const companies = s['الشركات التابعة'] || 8;
+  const brdAvg = pctNum(s['متوسط اكتمال BRD']);
+  const wsDone = s['إجمالي الأقسام في الورش'] || 0;
+  const risks = (s['المخاطر النشطة']||0);
+  const highRisks = s['المخاطر عالية الأولوية']||0;
+
+  $('kpiGrid').innerHTML = `
+    <div class="kpi amber">
+      <div class="label">إجمالي التقدم <span class="en">Overall Progress</span></div>
+      <div class="value">${overall.toFixed(1)}<small>%</small></div>
+      <div class="sub">من ${s['عدد المراحل']||5} مراحل</div>
+    </div>
+    <div class="kpi green">
+      <div class="label">نسبة السداد <span class="en">Payment %</span></div>
+      <div class="value">${paymentPct.toFixed(0)}<small>%</small></div>
+      <div class="sub">${fmtNum(s['المدفوع حتى الآن'])} / ${fmtNum((s['المدفوع حتى الآن']||0)+(s['المتبقي من الدفعات']||0))} ر.س</div>
+    </div>
+    <div class="kpi navy">
+      <div class="label">الشركات المشمولة <span class="en">Companies</span></div>
+      <div class="value">${companies}</div>
+      <div class="sub">شركات تابعة في النطاق</div>
+    </div>
+    <div class="kpi amber">
+      <div class="label">متوسط اكتمال BRD <span class="en">Avg BRD</span></div>
+      <div class="value">${brdAvg.toFixed(1)}<small>%</small></div>
+      <div class="sub">${s['BRD لم تستلم']||0} لم تستلم • ${s['قيد المراجعة الداخلية']||0} قيد المراجعة</div>
+    </div>
+    <div class="kpi green">
+      <div class="label">ورش العمل <span class="en">Workshops</span></div>
+      <div class="value">${wsDone}</div>
+      <div class="sub">قسم • ${s['ورش العمل المكتملة (كيانات)']||0} كيانات مكتملة</div>
+    </div>
+    <div class="kpi red">
+      <div class="label">المخاطر النشطة <span class="en">Active Risks</span></div>
+      <div class="value">${risks}</div>
+      <div class="sub">${highRisks} عالية الأولوية</div>
+    </div>`;
+
+  $('gaugeBig').textContent = overall.toFixed(1)+'%';
+}
+
+function renderCurrentPhase(D){
+  const active = D.phases.find(p=>p.rag==='amber') || D.phases[0] || {};
+  const pct = pctNum(active.pct);
+  $('currentPhaseCard').innerHTML = `
+    <h3>المرحلة الحالية <span class="en">Current Phase</span>
+      <span class="pill" style="background:var(--gold);color:var(--navy)">${active.status||'—'}</span></h3>
+    <div style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:6px">${active.name||'—'}</div>
+    <div style="font-size:12.5px;color:var(--muted);margin-bottom:14px">${active.owner? 'المسؤول: '+active.owner : ''}</div>
+    <div class="bar-row">
+      <div class="top"><span>الإنجاز</span><b>${pct.toFixed(0)}%</b></div>
+      <div class="bar-wrap"><div class="bar ${active.rag}" style="width:${Math.max(pct,2)}%"></div></div>
+    </div>
+    <div style="font-size:12px;color:var(--ink-2);margin-top:10px;line-height:1.7">
+      <div>📅 <b style="color:var(--navy)">البدء:</b> ${active.start||'—'}</div>
+      <div>🎯 <b style="color:var(--navy)">المخطط:</b> ${active.end||'—'}</div>
+      <div>📍 <b style="color:var(--navy)">المدة:</b> ${active.days||'—'} يوم</div>
+      <div style="margin-top:6px;font-style:italic;color:var(--muted)">${active.notes||''}</div>
+    </div>`;
+}
+
+function renderPhaseBars(D){
+  $('phaseBars').innerHTML = D.phases.map(p=>{
+    const pct = pctNum(p.pct);
+    return `<div class="bar-row">
+      <div class="top">
+        <span>${ragDot(p.rag)}<b>${p.n}. ${p.name}</b></span>
+        <b>${pct.toFixed(0)}%</b>
+      </div>
+      <div class="bar-wrap"><div class="bar ${p.rag}" style="width:${Math.max(pct,2)}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderPipeline(id, pipeline){
+  $(id).innerHTML = pipeline.map(s=>{
+    const cls = s.count===0 ? 'empty' : '';
+    return `<div class="funnel-stage ${cls}">
+      <div class="name">${s.stage}</div>
+      <div class="cnt">${s.count}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderContractRow(D){
+  const i = D.info;
+  const total = i['إجمالي العقد شامل الضريبة'] || 0;
+  const beforeTax = i['قيمة العقد قبل الضريبة (ر.س)'] || 0;
+  const vat = i['ضريبة القيمة المضافة 15%'] || 0;
+  const paid = D.summary['المدفوع حتى الآن'] || 0;
+  const start = fmtDate(i['تاريخ بدء المشروع']);
+  const end = fmtDate(i['تاريخ انتهاء المشروع المخطط']);
+  const wsDone = D.summary['ورش العمل المكتملة (كيانات)']||0;
+  const wsRemaining = D.summary['ورش العمل المتبقية (كيانات)']||0;
+  const brdDone = D.summary['BRD معتمدة']||0;
+  const brdNotReceived = D.summary['BRD لم تستلم']||0;
+
+  $('contractRow').innerHTML = `
+    <div class="card" style="background:linear-gradient(135deg,var(--navy) 0%,var(--navy-3) 100%);color:#fff">
+      <h3 style="color:#fff">قيمة العقد <span class="en" style="color:var(--gold-2)">Contract Value</span></h3>
+      <div style="font-size:28px;font-weight:900;color:var(--gold-2)">${fmtNum(total)} <small style="font-size:14px;color:#cfd8e6">ر.س</small></div>
+      <div style="font-size:12px;color:#cfd8e6;margin-top:4px">شاملاً ضريبة القيمة المضافة 15%</div>
+      <div style="margin-top:14px;border-top:1px solid rgba(255,255,255,.15);padding-top:12px;font-size:12.5px;line-height:1.9">
+        <div>القيمة قبل الضريبة: <b style="color:#fff">${fmtNum(beforeTax)}</b> ر.س</div>
+        <div>ضريبة القيمة المضافة: <b style="color:#fff">${fmtNum(vat)}</b> ر.س</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>الجدول الزمني <span class="en">Timeline</span></h3>
+      <div style="line-height:1.9;font-size:13px">
+        <div><b style="color:var(--navy)">📅 البداية:</b> ${start}</div>
+        <div><b style="color:var(--navy)">🏁 الانتهاء المخطط:</b> ${end}</div>
+        <div><b style="color:var(--navy)">⏱ المدة:</b> ${i['إجمالي مدة المشروع']||'—'}</div>
+        <div><b style="color:var(--navy)">📍 الوضع الحالي:</b> ${(i['المرحلة الحالية']||'').split('/')[0].trim()}</div>
+      </div>
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted)">
+        آخر تحديث للوحة: <b style="color:var(--navy)">${fmtDate(i['آخر تحديث للوحة'])}</b>
+      </div>
+    </div>
+    <div class="card">
+      <h3>الإنجازات الرئيسية <span class="en">Key Achievements</span></h3>
+      <div style="font-size:12.5px;line-height:1.9">
+        <div>✅ <b>المسدد حتى الآن:</b> ${fmtNum(paid)} ر.س</div>
+        <div>✅ <b>${D.summary['إجمالي الأقسام في الورش']||0} ورشة عمل</b> مكتملة في ${wsDone} كيانات</div>
+        <div>✅ <b>${D.summary['الأنشطة المنجزة هذا التقرير']||0} نشاط</b> منجز في فترة التقرير</div>
+        <div>⏳ <b>BRD متبقي:</b> ${brdNotReceived} شركات</div>
+        <div>⏳ <b>ورش متبقية:</b> ${wsRemaining} كيانات</div>
+        <div>📌 <b>BRD معتمدة:</b> ${brdDone}</div>
+      </div>
+    </div>`;
+}
+
+function renderPhasesTable(D){
+  $('phaseTable').innerHTML = D.phases.map(p=>{
+    const pct = pctNum(p.pct);
+    return `<tr>
+      <td><b>${p.n}</b></td>
+      <td><b style="color:var(--navy)">${p.name}</b></td>
+      <td>${p.owner||'—'}</td>
+      <td class="en">${p.start}</td>
+      <td class="en">${p.end}</td>
+      <td>${p.days||'—'} يوم</td>
+      <td><b>${pct.toFixed(0)}%</b></td>
+      <td>${p.status||'—'}</td>
+      <td style="text-align:center">${ragDot(p.rag)}</td>
+      <td>${fmtNum(p.val)}</td>
+      <td style="color:var(--green)"><b>${fmtNum(p.paid)}</b></td>
+      <td style="color:var(--amber)">${fmtNum(p.rem)}</td>
+      <td style="font-size:11px;color:var(--muted)">${p.notes||''}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderGantt(D){
+  if(D.phases.length===0) return;
+  // Find timeline bounds
+  const allDates = D.phases.flatMap(p=>[p.start, p.end].filter(Boolean).map(d=>new Date(d).getTime()).filter(t=>!isNaN(t)));
+  const start = Math.min(...allDates);
+  const end = Math.max(...allDates);
+  const total = end - start || 1;
+  const today = Date.now();
+
+  // Scale (month labels)
+  const months = [];
+  let cur = new Date(start); cur.setDate(1);
+  while(cur.getTime() < end + 30*24*3600*1000){
+    months.push(cur.toLocaleString('en-US',{month:'short'}));
+    cur.setMonth(cur.getMonth()+1);
+  }
+  $('ganttScale').innerHTML = '<div style="position:relative;height:18px;display:flex">'+
+    months.map(m=>`<div style="flex:1;text-align:center;font-size:11px;color:var(--muted);font-weight:700;border-right:1px dashed #d8deea">${m}</div>`).join('')+'</div>';
+
+  $('ganttBody').innerHTML = D.phases.map(p=>{
+    const ps = new Date(p.start).getTime();
+    const pe = new Date(p.end).getTime();
+    if(isNaN(ps)||isNaN(pe)) return '';
+    const left = ((ps-start)/total)*100;
+    const width= Math.max(((pe-ps)/total)*100, 2);
+    const todayLeft = ((today-start)/total)*100;
+    const tShow = today>=start && today<=end ? `<div class="today-line" style="right:${todayLeft}%"></div>` : '';
+    return `<div class="gantt-row">
+      <div class="ttl">${p.n}. ${p.name}<small>${p.owner||''}</small></div>
+      <div class="gantt-track">
+        <div class="gantt-bar ${p.rag}" style="right:${left}%;width:${width}%">
+          ${pctNum(p.pct).toFixed(0)}% • ${p.start} → ${p.end}
+        </div>
+        ${tShow}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderBRDKpis(D){
+  const s = D.summary;
+  $('brdKpis').innerHTML = `
+    <div class="kpi navy"><div class="label">الشركات الكلية</div><div class="value">${s['الشركات التابعة']||8}</div><div class="sub">في نطاق المشروع</div></div>
+    <div class="kpi green"><div class="label">BRD مستلمة</div><div class="value">${s['قيد المراجعة الداخلية']||0}</div><div class="sub">قيد المراجعة الداخلية</div></div>
+    <div class="kpi red"><div class="label">BRD لم تستلم</div><div class="value">${s['BRD لم تستلم']||0}</div><div class="sub">تحتاج جدولة</div></div>
+    <div class="kpi amber"><div class="label">متوسط الاكتمال</div><div class="value">${pctNum(s['متوسط اكتمال BRD']).toFixed(1)}<small>%</small></div><div class="sub">موزون</div></div>
+    <div class="kpi" style="border-top-color:var(--gold)"><div class="label">معتمدة نهائياً</div><div class="value">${s['BRD معتمدة']||0}</div><div class="sub">جاهزة للتنفيذ</div></div>`;
+}
+
+function renderCompanies(D){
+  $('compCards').innerHTML = D.companies.map(c=>{
+    const pct = pctNum(c.pct);
+    const state = pct>=100? 'approved' : (pct>0? 'received' : '');
+    const stateClass = state==='approved'? 'green' : (state==='received'? 'amber' : 'grey');
+    return `<div class="comp-card ${state}">
+      <h4>${c.n}. ${c.name}</h4>
+      <div class="biz">${c.biz||''}</div>
+      <div class="rep">👤 ${c.rep&&c.rep!=='-'? '<b>'+c.rep+'</b>' : '<span style="color:var(--muted)">لم يُعيّن ممثل</span>'}</div>
+      <div class="rep" style="margin-top:3px">📅 الاستلام: <b>${c.recv||'—'}</b></div>
+      <div class="pct-box">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span class="badge ${stateClass}">${c.status||'—'}</span>
+          <span class="pct-num">${pct.toFixed(0)}%</span>
+        </div>
+        <div class="bar-wrap"><div class="bar ${stateClass}" style="width:${Math.max(pct,2)}%"></div></div>
+      </div>
+      <div class="note">${c.note||'&nbsp;'}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderPayments(D){
+  const totalAmt = D.payments.reduce((s,p)=>s+(p.amount||0),0);
+  const paid = D.payments.filter(p=>String(p.status||'').toLowerCase().includes('paid') && !String(p.status||'').toLowerCase().includes("didn"));
+  const paidSum = paid.reduce((s,p)=>s+(p.amount||0),0);
+  const paidPct = totalAmt>0 ? (paidSum/totalAmt*100) : 0;
+  $('paidPctPill').textContent = paidPct.toFixed(0)+'% مدفوع';
+
+  $('payGrid').innerHTML = D.payments.map(p=>{
+    const isPaid = String(p.status||'').toLowerCase().includes('paid') && !String(p.status||'').toLowerCase().includes("didn");
+    return `<div class="pay-card ${isPaid?'paid':'due'}">
+      <div class="num">${String(p.n).padStart(2,'0')}</div>
+      <div class="ttl">${p.name}</div>
+      <div class="pct">${p.pct||''} • ${p.cond||''}</div>
+      <div class="amt">${fmtNum(p.amount)} <small>ر.س</small></div>
+      <div class="cond">${isPaid? 'سُددت في '+p.paidDate : 'تستحق: '+(p.cond||'لاحقاً')}</div>
+      <span class="status badge ${isPaid?'green':'amber'}">${isPaid?'✓ مسددة':'⏳ قيد الانتظار'}</span>
+    </div>`;
+  }).join('');
+
+  const rem = totalAmt - paidSum;
+  $('paySummary').innerHTML = `
+    <div class="bar-row">
+      <div class="top"><span>المسدد</span><b style="color:var(--green)">${fmtNum(paidSum)} ر.س</b></div>
+      <div class="bar-wrap"><div class="bar green" style="width:${paidPct}%"></div></div>
+    </div>
+    <div class="bar-row">
+      <div class="top"><span>المتبقي</span><b style="color:var(--amber)">${fmtNum(rem)} ر.س</b></div>
+      <div class="bar-wrap"><div class="bar amber" style="width:${100-paidPct}%"></div></div>
+    </div>
+    <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:13px;font-weight:700;color:var(--navy);display:flex;justify-content:space-between">
+      <span>إجمالي العقد</span><span>${fmtNum(totalAmt)} ر.س</span>
+    </div>`;
+}
+
+function renderRisks(D){
+  $('riskCountPill').textContent = D.risks.length + ' نشطة';
+  $('risksList').innerHTML = D.risks.map(r=>`
+    <div class="risk-card ${r.level}">
+      <div class="rt">
+        <div class="desc">${r.n}. ${r.desc}</div>
+        <span class="badge ${r.level==='high'?'red':'amber'}">${r.priority||'—'}</span>
+      </div>
+      <div class="meta">📌 <b>الخطة:</b> ${r.plan||'—'}</div>
+      <div class="meta">👤 <b>المسؤول:</b> ${r.owner||'—'} &nbsp;•&nbsp; <b>الحالة:</b> ${r.status||'—'}</div>
+    </div>`).join('') || '<div style="color:var(--muted);text-align:center;padding:20px">لا توجد مخاطر مسجلة</div>';
+}
+
+function renderObservations(D){
+  // observations rows: [n, obs, impact, action]
+  const items = D.observations.map(r=>({obs:r[1], impact:r[2], action:r[3]}));
+  $('obsList').innerHTML = items.map((o,i)=>`
+    <div class="obs-item">
+      <div class="obs-t">${i+1}. ${o.obs}</div>
+      <div class="grid-2">
+        <div><div class="lbl">⚠️ الأثر المتوقع</div><div class="val">${o.impact||'—'}</div></div>
+        <div><div class="lbl">✅ الإجراء المقترح</div><div class="val">${o.action||'—'}</div></div>
+      </div>
+    </div>`).join('') || '<div style="color:var(--muted);text-align:center;padding:20px">لا توجد ملاحظات</div>';
+}
+
+function renderWorkshops(D){
+  const totalDepts = D.workshops.reduce((s,w)=>s+w.count, 0);
+  $('wsCountPill').textContent = totalDepts + ' قسم • ' + D.workshops.length + ' كيانات';
+  $('workshopsByEntity').innerHTML = D.workshops.map(w=>{
+    const chips = w.depts.map(d=>`<span class="chip ${w.status==='pending'?'pending':''}">${d}</span>`).join('');
+    return `<div class="ws-entity">
+      <div class="ent-title">${w.status==='pending'?'⏳':'✅'} ${w.entity}
+        <span class="cnt">${w.count} ${w.status==='pending'?'• بانتظار':'ورشة'}</span>
+      </div>
+      <div class="chips">${chips}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderActivities(D){
+  // done: [n, activity, status, notes]
+  $('doneCountPill').textContent = D.done.length + ' أنشطة';
+  $('doneList').innerHTML = D.done.map(r=>`
+    <div class="act-item">
+      <div class="at"><div class="desc">✅ ${r[1]||'—'}</div>
+        <span class="badge green">${r[2]||'مكتمل'}</span></div>
+    </div>`).join('') || '<div style="color:var(--muted);text-align:center;padding:20px">لا توجد أنشطة منجزة</div>';
+
+  // planned: [n, activity, owner, date, status, notes]
+  $('plannedCountPill').textContent = D.planned.length + ' أنشطة';
+  $('plannedList').innerHTML = D.planned.map(r=>`
+    <div class="act-item planned">
+      <div class="at"><div class="desc">📌 ${r[1]||'—'}</div>
+        <span class="badge amber">${r[4]||'مخطط'}</span></div>
+      <div class="meta">👤 <b style="color:var(--gold-3)">${r[2]||'—'}</b> &nbsp;•&nbsp; 🎯 ${fmtDate(r[3])}</div>
+    </div>`).join('') || '<div style="color:var(--muted);text-align:center;padding:20px">لا توجد أنشطة مخططة</div>';
+}
+
+/* ════════════════════════════════════════════════════════
+   CHARTS
+   ════════════════════════════════════════════════════════ */
+Chart.defaults.font.family = "'Cairo','Inter',sans-serif";
+Chart.defaults.color = '#3a4a64';
+
+function destroyChart(id){ if(CHARTS[id]){ CHARTS[id].destroy(); delete CHARTS[id]; } }
+
+function renderCharts(D){
+  const s = D.summary;
+  const overall = pctNum(s['نسبة الإنجاز الإجمالية للمشروع']);
+
+  // Gauge
+  destroyChart('gaugeOverall');
+  CHARTS.gaugeOverall = new Chart($('gaugeOverall'),{
+    type:'doughnut',
+    data:{labels:['Done','Remaining'],
+      datasets:[{data:[overall, Math.max(100-overall,0)], backgroundColor:['#C9A961','#eef1f6'],
+        borderWidth:0, cutout:'78%', circumference:270, rotation:225}]},
+    options:{plugins:{legend:{display:false},tooltip:{enabled:false}},animation:{duration:1100}}
   });
 
-  document.getElementById('companiesGrid').innerHTML=d.companies.map(c=>{
-    const p=c.pct; let color='red',cv='var(--danger)';
-    if(p>=0.8){color='green';cv='var(--success)';}
-    else if(p>0||c.recvDate){color='amber';cv='var(--warning)';}
-    return `<div class="company-card ${color}">
-      <div class="name">${c.name}</div>
-      <div class="meta">${c.biz||'—'}${c.rep?' · '+c.rep:''}</div>
-      <div class="cprog"><div class="cprog-fill" style="width:${p*100}%;background:${cv}"></div></div>
-      <div class="pct-text" style="color:${cv}">${fmtPct(p,1)}</div>
-      ${c.recvDate?`<div class="recv-date">📩 استُلمت في: ${fmtDate(c.recvDate)}</div>`:''}
-      <div class="status-chip" style="color:${cv}">${c.internal||'—'}</div>
-    </div>`;
-  }).join('');
+  // RAG donut
+  const ragCounts = {green:0,amber:0,red:0,grey:0};
+  D.phases.forEach(p=>{ ragCounts[p.rag] = (ragCounts[p.rag]||0)+1; });
+  destroyChart('ragDonut');
+  CHARTS.ragDonut = new Chart($('ragDonut'),{
+    type:'doughnut',
+    data:{labels:['قيد التنفيذ','لم تبدأ','متأخرة','مكتملة'],
+      datasets:[{data:[ragCounts.amber, ragCounts.grey, ragCounts.red, ragCounts.green],
+        backgroundColor:['#F2A93B','#9aa4b2','#E04848','#22A06B'], borderWidth:2, borderColor:'#fff'}]},
+    options:{plugins:{legend:{position:'bottom',labels:{font:{size:11.5,weight:'600'},padding:10,usePointStyle:true,pointStyle:'circle'}}},cutout:'62%'}
+  });
 
-  document.getElementById('doneList').innerHTML=d.workshops.filter(w=>String(w.status||'').includes('مكتملة')).map(w=>
-    `<li><div class="icon-circle icon-done">✓</div><div><div class="activity-text">${String(w.entity||'').split('-').pop().trim()}</div><div class="activity-meta">${w.dept||''}</div></div><div></div></li>`
-  ).join('');
+  // Phase Value
+  destroyChart('phaseValueChart');
+  CHARTS.phaseValueChart = new Chart($('phaseValueChart'),{
+    type:'bar',
+    data:{labels:D.phases.map(p=>p.name),
+      datasets:[
+        {label:'المسدد', data:D.phases.map(p=>p.paid||0), backgroundColor:'#22A06B', borderRadius:6, stack:'a'},
+        {label:'المتبقي', data:D.phases.map(p=>p.rem||0), backgroundColor:'#F2A93B', borderRadius:6, stack:'a'}
+      ]},
+    options:{indexAxis:'y',plugins:{legend:{position:'bottom',labels:{font:{size:11.5}}}},
+      scales:{x:{stacked:true,ticks:{callback:v=>v/1000+'k'}},y:{stacked:true,ticks:{font:{size:10.5}}}}}
+  });
 
-  document.getElementById('plannedList').innerHTML=d.planned.map((a,i)=>
-    `<li><div class="icon-circle icon-plan">${i+1}</div><div><div class="activity-text">${String(a.activity||'').split('-').pop().trim()}</div>${a.owner?`<div class="activity-meta">المسؤول: ${a.owner}</div>`:''}</div>${a.due?`<div class="due-badge">${fmtDate(a.due)}</div>`:'<div></div>'}</li>`
-  ).join('');
+  // Phase Progress vs Plan
+  destroyChart('phaseProgressChart');
+  CHARTS.phaseProgressChart = new Chart($('phaseProgressChart'),{
+    type:'bar',
+    data:{labels:D.phases.map(p=>p.name),
+      datasets:[
+        {label:'المخطط 100%', data:D.phases.map(_=>100), backgroundColor:'#eef1f6', borderRadius:6},
+        {label:'الفعلي %', data:D.phases.map(p=>pctNum(p.pct)), backgroundColor:'#0A2540', borderRadius:6}
+      ]},
+    options:{plugins:{legend:{position:'bottom',labels:{font:{size:11.5}}}},
+      scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%'}},x:{ticks:{font:{size:10},maxRotation:30}}}}
+  });
 
-  document.getElementById('phasesList').innerHTML=d.phases.map(p=>{
-    const pv=p.pct*100;
-    return `<div class="phase-row">
-      <div>${p.id}</div>
-      <div title="${p.name}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</div>
-      <div><span class="status ${statusCls(p.status)}">${p.status||'—'}</span></div>
-      <div class="progress-bar"><div class="progress-fill" style="width:${pv}%">${pv>10?Math.round(pv)+'%':''}</div></div>
-      <div><span class="rag ${ragCls(p.rag)}">${ragSym(p.rag)}</span></div>
-    </div>`;
-  }).join('');
+  // BRD chart
+  destroyChart('brdChart');
+  CHARTS.brdChart = new Chart($('brdChart'),{
+    type:'bar',
+    data:{labels:D.pipeline.map(p=>p.stage),
+      datasets:[{label:'عدد الشركات',data:D.pipeline.map(p=>p.count),
+        backgroundColor:['#E04848','#F2A93B','#C9A961','#3674C4','#22A06B'],borderRadius:6}]},
+    options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.x+' شركة'}}},
+      scales:{x:{beginAtZero:true,max:Math.max(8, ...D.pipeline.map(p=>p.count)),ticks:{stepSize:1}}}}
+  });
 
-  document.getElementById('finContract').textContent=fmtNum(d.preVat)+' ر.س';
-  document.getElementById('finVat').textContent=fmtNum(d.vatAmt)+' ر.س';
-  document.getElementById('finTotal').textContent=fmtNum(d.totalContract)+' ر.س';
-  document.getElementById('finPaid').textContent=fmtNum(d.totalPaid)+' ر.س';
-  document.getElementById('finRemaining').textContent=fmtNum(d.pendingPay)+' ر.س';
-  document.getElementById('finPct').textContent=fmtPct(d.payRatio);
-
-  document.getElementById('risksBody').innerHTML=d.risks.map(r=>{
-    const ic=String(r.impact||'').includes('عالي')?'late':'prog';
-    const sc=String(r.status||'').includes('نشط')?'late':'wait';
-    return `<tr><td>${r.desc}</td><td style="text-align:center"><span class="status ${ic}">${r.impact||'—'}</span></td><td style="text-align:center"><span class="status ${sc}">${r.status||'—'}</span></td><td>${r.plan||'—'}</td></tr>`;
-  }).join('');
-
-  document.getElementById('loading').style.display='none';
-  document.getElementById('dashboard').style.display='block';
+  // Payment chart
+  destroyChart('payChart');
+  CHARTS.payChart = new Chart($('payChart'),{
+    type:'doughnut',
+    data:{labels:D.payments.map(p=>p.name+' ('+(p.pct||'')+')'),
+      datasets:[{data:D.payments.map(p=>p.amount||0),
+        backgroundColor:['#22A06B','#C9A961','#E0C078','#0A2540'],borderWidth:2,borderColor:'#fff'}]},
+    options:{plugins:{legend:{position:'bottom',labels:{font:{size:10.5},padding:8,usePointStyle:true}}},cutout:'58%'}
+  });
 }
 
-async function loadData(){
-  try{
-    const res=await fetch(API_URL+'?t='+Date.now());
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    render(parse(await res.json()));
-  }catch(err){
-    document.getElementById('loading').style.display='none';
-    const el=document.getElementById('error-msg');
-    el.style.display='block';
-    el.textContent='تعذّر تحميل البيانات: '+err.message;
-  }
-}
+/* ════════════════════════════════════════════════════════
+   TABS + INIT
+   ════════════════════════════════════════════════════════ */
+$('tabs').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  $('page-'+b.dataset.tab).classList.add('active');
+});
 
-loadData();
-setInterval(loadData,REFRESH_MS);
+$('refreshBtn').addEventListener('click', ()=>loadData(true));
+
+// Auto-load on mount
+loadData(false);
+
+// Auto-refresh every 5 minutes (silently)
+setInterval(()=>{ if(WEB_APP_URL && !WEB_APP_URL.startsWith('PASTE_')) loadData(true); }, 5*60*1000);
 </script>
 </body>
 </html>
