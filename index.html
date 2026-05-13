@@ -694,6 +694,24 @@ function parseWorkshops(rows){
   });
   return Object.values(grouped).map(g=>({...g, count: g.depts.filter(d=>!d.includes('بانتظار')).length}));
 }
+/* Derive bulletproof stats from Pipeline + Companies sheets, regardless of
+   summary-sheet label changes. Pipeline = source of truth for BRD counts. */
+function computeStats(D){
+  const pipe = D.pipeline || [];
+  const find = (kw) => pipe.find(p => {
+    const s = String(p.stage||'');
+    return kw.some(k => s.includes(k));
+  });
+  return {
+    brd_not_received: (find(['لم تستلم','متأخر','Not Received'])||{}).count || 0,
+    brd_in_review:    (find(['قيد المراجعة الداخلية','Internal'])||{}).count || 0,
+    brd_ready:        (find(['جاهزة','Ready'])||{}).count || 0,
+    brd_kayan_review: (find(['قيد مراجعة كيان','Kayan'])||{}).count || 0,
+    brd_approved:     (find(['معتمدة','Approved'])||{}).count || 0,
+    total_companies:  (D.companies||[]).length || 8
+  };
+}
+
 function parseSimpleList(rows, dataStartRow=2){
   // For done/observations/planned simple sheets
   const out = [];
@@ -762,6 +780,8 @@ async function loadData(forceFetch=false){
     checklist: raw.checklist || [],
     _meta: raw._meta || {}
   };
+  // Compute derived stats AFTER all sub-parses are done
+  data._stats = computeStats(data);
 
   renderAll(data);
   $('last-fetch').textContent = new Date().toLocaleString('en-GB',{hour12:false});
@@ -816,9 +836,10 @@ function renderHeader(D){
 
 function renderKPIs(D){
   const s = D.summary;
+  const stats = D._stats;
   const overall = pctNum(s['نسبة الإنجاز الإجمالية للمشروع']);
   const paymentPct = pctNum(s['نسبة السداد']);
-  const companies = s['الشركات التابعة'] || 8;
+  const companies = s['الشركات التابعة'] || stats.total_companies || 8;
   const brdAvg = pctNum(s['متوسط اكتمال BRD']);
   const wsDone = s['إجمالي الأقسام في الورش'] || 0;
   const risks = (s['المخاطر النشطة']||0);
@@ -843,7 +864,7 @@ function renderKPIs(D){
     <div class="kpi amber">
       <div class="label">متوسط اكتمال BRD <span class="en">Avg BRD</span></div>
       <div class="value">${brdAvg.toFixed(1)}<small>%</small></div>
-      <div class="sub">${s['BRD لم تستلم']||0} لم تستلم • ${s['قيد المراجعة الداخلية']||0} قيد المراجعة</div>
+      <div class="sub">${stats.brd_not_received} لم تستلم • ${stats.brd_in_review} قيد المراجعة</div>
     </div>
     <div class="kpi green">
       <div class="label">ورش العمل <span class="en">Workshops</span></div>
@@ -912,8 +933,8 @@ function renderContractRow(D){
   const end = fmtDate(i['تاريخ انتهاء المشروع المخطط']);
   const wsDone = D.summary['ورش العمل المكتملة (كيانات)']||0;
   const wsRemaining = D.summary['ورش العمل المتبقية (كيانات)']||0;
-  const brdDone = D.summary['BRD معتمدة']||0;
-  const brdNotReceived = D.summary['BRD لم تستلم']||0;
+  const brdDone = D._stats.brd_approved;
+  const brdNotReceived = D._stats.brd_not_received;
 
   $('contractRow').innerHTML = `
     <div class="card" style="background:linear-gradient(135deg,var(--navy) 0%,var(--navy-3) 100%);color:#fff">
@@ -1012,12 +1033,13 @@ function renderGantt(D){
 
 function renderBRDKpis(D){
   const s = D.summary;
+  const st = D._stats;
   $('brdKpis').innerHTML = `
-    <div class="kpi navy"><div class="label">الشركات الكلية</div><div class="value">${s['الشركات التابعة']||8}</div><div class="sub">في نطاق المشروع</div></div>
-    <div class="kpi green"><div class="label">BRD مستلمة</div><div class="value">${s['قيد المراجعة الداخلية']||0}</div><div class="sub">قيد المراجعة الداخلية</div></div>
-    <div class="kpi red"><div class="label">BRD لم تستلم</div><div class="value">${s['BRD لم تستلم']||0}</div><div class="sub">تحتاج جدولة</div></div>
+    <div class="kpi navy"><div class="label">الشركات الكلية</div><div class="value">${st.total_companies||s['الشركات التابعة']||8}</div><div class="sub">في نطاق المشروع</div></div>
+    <div class="kpi green"><div class="label">BRD مستلمة</div><div class="value">${st.brd_in_review}</div><div class="sub">قيد المراجعة الداخلية</div></div>
+    <div class="kpi red"><div class="label">BRD لم تستلم</div><div class="value">${st.brd_not_received}</div><div class="sub">تحتاج جدولة</div></div>
     <div class="kpi amber"><div class="label">متوسط الاكتمال</div><div class="value">${pctNum(s['متوسط اكتمال BRD']).toFixed(1)}<small>%</small></div><div class="sub">موزون</div></div>
-    <div class="kpi" style="border-top-color:var(--gold)"><div class="label">معتمدة نهائياً</div><div class="value">${s['BRD معتمدة']||0}</div><div class="sub">جاهزة للتنفيذ</div></div>`;
+    <div class="kpi" style="border-top-color:var(--gold)"><div class="label">معتمدة نهائياً</div><div class="value">${st.brd_approved}</div><div class="sub">جاهزة للتنفيذ</div></div>`;
 }
 
 function renderCompanies(D){
