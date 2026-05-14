@@ -433,12 +433,6 @@ table tbody tr:last-child td{border-bottom:none}
       </div>
     </div>
 
-    <div class="card" style="margin-top:14px">
-      <h3>ورش العمل المنعقدة حسب الكيان <span class="en">Workshops by Entity</span>
-        <span class="pill" id="wsCountPill">— ورشة</span></h3>
-      <div id="workshopsByEntity"></div>
-    </div>
-
     <div class="grid-2" style="margin-top:14px">
       <div class="card">
         <h3>الأنشطة المنجزة <span class="en">Completed Activities</span>
@@ -867,7 +861,7 @@ function renderKPIs(D){
       <div class="sub">${stats.brd_not_received} لم تستلم • ${stats.brd_in_review} قيد المراجعة</div>
     </div>
     <div class="kpi green">
-      <div class="label">ورش العمل <span class="en">Workshops</span></div>
+      <div class="label">مرحلة جمع المتطلبات وتحليل الفجوة <span class="en">Requirement Gathering & Gap Analysis Sessions</span></div>
       <div class="value">${wsDone}</div>
       <div class="sub">قسم • ${s['ورش العمل المكتملة (كيانات)']||0} كيانات مكتملة</div>
     </div>
